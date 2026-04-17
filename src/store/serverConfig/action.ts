@@ -33,6 +33,7 @@ export class ServerConfigActionImpl {
         onSuccess: (data) => {
           this.#set(
             {
+              billboard: data.billboard ?? null,
               featureFlags: data.serverFeatureFlags,
               serverConfig: data.serverConfig,
               serverConfigInit: true,
