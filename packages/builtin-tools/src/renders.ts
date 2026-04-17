@@ -78,3 +78,5 @@ export const getBuiltinRender = (
 
   return undefined;
 };
+
+export { getBuiltinRenderDisplayControl } from './displayControls';
