@@ -1,0 +1,150 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "purpose": "Ground truth for PHI + credential + refusal detection. Used to validate behavioral equivalence between Python hooks.py (source of truth) and TypeScript port (Phase 3 of v5.1 migration).",
+    "source_patterns": "/opt/obsidian-pantheon/runtime/openclaw/lib/pantheon/hooks.py PHI_PATTERNS (lines 138-158), CRED_PATTERNS (lines 264-273), REFUSAL_PATTERNS (lines 298-303)",
+    "created": "2026-04-17",
+    "gate": "Phase 0 — all fixtures must pass against current Python impl before migration proceeds"
+  },
+
+  "phi_fixtures": [
+    {"id": "mrn-01", "text": "Patient MRN: 12345", "expected": ["mrn"], "notes": "basic MRN with colon"},
+    {"id": "mrn-02", "text": "mrn#98765", "expected": ["mrn"], "notes": "MRN with hash"},
+    {"id": "mrn-03", "text": "See MRN  1234567", "expected": ["mrn"], "notes": "MRN with whitespace"},
+    {"id": "mrn-neg-01", "text": "My username is MRN_bot", "expected": [], "notes": "MRN without digits — no match"},
+    {"id": "mrn-neg-02", "text": "mrn: 123", "expected": [], "notes": "only 3 digits — needs 4+"},
+
+    {"id": "ssn-01", "text": "SSN is 123-45-6789", "expected": ["ssn"], "notes": "standard SSN format"},
+    {"id": "ssn-02", "text": "he said 999-99-9999 in passing", "expected": ["ssn"], "notes": "any 3-2-4 hyphenated"},
+    {"id": "ssn-neg-01", "text": "phone 123-4567-890", "expected": [], "notes": "wrong hyphen pattern"},
+
+    {"id": "dob-01", "text": "DOB: 01/15/1985", "expected": ["dob"], "notes": "DOB with slashes"},
+    {"id": "dob-02", "text": "date of birth 3-20-1990", "expected": ["dob"], "notes": "hyphens"},
+    {"id": "dob-03", "text": "born 12/5/2000", "expected": ["dob"], "notes": "single-digit day"},
+    {"id": "dob-04", "text": "D.O.B: 7/4/1976", "expected": ["dob"], "notes": "periods in DOB"},
+    {"id": "dob-neg-01", "text": "DOB format TBD", "expected": [], "notes": "no date — no match"},
+    {"id": "dob-neg-02", "text": "born 1990", "expected": [], "notes": "year only — needs m/d/y"},
+
+    {"id": "phone-01", "text": "call 555-123-4567", "expected": ["phone"], "notes": "hyphenated phone"},
+    {"id": "phone-02", "text": "(555) 123-4567", "expected": ["phone"], "notes": "parenthesized area code"},
+    {"id": "phone-03", "text": "+1-800-555-0199 toll-free", "expected": ["phone"], "notes": "international prefix"},
+    {"id": "phone-04", "text": "call 5551234567", "expected": ["phone"], "notes": "no separators"},
+    {"id": "phone-neg-01", "text": "version 1.2.3 of the library", "expected": [], "notes": "not enough digits"},
+
+    {"id": "email-01", "text": "reach me at jane.doe@hospital.org", "expected": ["email"], "notes": "typical email"},
+    {"id": "email-neg-01", "text": "test email: a@example.com", "expected": [], "notes": "example.com is allowlisted"},
+    {"id": "email-neg-02", "text": "internal: user@pantheon", "expected": [], "notes": "pantheon domain allowlisted"},
+    {"id": "email-neg-03", "text": "staging: hello@test.com", "expected": [], "notes": "test.com allowlisted"},
+
+    {"id": "npi-01", "text": "NPI: 1234567890", "expected": ["npi", "phone"], "notes": "standard NPI — also triggers phone regex (10 digits matches xxx-xxx-xxxx shape without separators)"},
+    {"id": "npi-02", "text": "npi # 9876543210 on file", "expected": ["npi", "phone"], "notes": "with hash; 10 consecutive digits also match phone"},
+    {"id": "npi-neg-01", "text": "NPI 12345", "expected": [], "notes": "only 5 digits"},
+
+    {"id": "patient-name-01", "text": "patient: John Smith", "expected": ["patient_name"], "notes": "lowercase patient (regex lacks re.I flag — known Python quirk)"},
+    {"id": "patient-name-02", "text": "pt: Mary Johnson", "expected": ["patient_name"], "notes": "pt abbreviation"},
+    {"id": "patient-name-03", "text": "Patient: John Smith", "expected": [], "notes": "GROUND TRUTH: capital-P 'Patient' does NOT match because Python regex is case-sensitive (hooks.py:147, no re.I flag). TypeScript port MUST replicate this miss."},
+    {"id": "patient-name-neg-01", "text": "patient status: stable", "expected": [], "notes": "not followed by name"},
+    {"id": "patient-name-neg-02", "text": "patient: j smith", "expected": [], "notes": "lowercase first name — no match"},
+
+    {"id": "title-name-01", "text": "Dr. Alice Wonderland prescribed it", "expected": ["full_name_with_title"], "notes": "Dr."},
+    {"id": "title-name-02", "text": "Mrs. Susan Brown called", "expected": ["full_name_with_title"], "notes": "Mrs."},
+    {"id": "title-name-03", "text": "Prof. James Williams attends", "expected": ["full_name_with_title"], "notes": "Prof."},
+    {"id": "title-name-neg-01", "text": "The dr. is in", "expected": [], "notes": "lowercase title no name"},
+
+    {"id": "address-01", "text": "lives at 123 Main Street", "expected": ["address"], "notes": "Street"},
+    {"id": "address-02", "text": "office at 45 Maple Ave", "expected": ["address"], "notes": "Ave"},
+    {"id": "address-03", "text": "4567 Elm Drive apt 2B", "expected": ["address"], "notes": "Drive with apt"},
+    {"id": "address-neg-01", "text": "go to main street later", "expected": [], "notes": "no number"},
+    {"id": "address-neg-02", "text": "version 1.0 Beta Ave", "expected": ["address"], "notes": "Beta Ave matches — could be false positive but regex accepts"},
+
+    {"id": "insurance-01", "text": "Policy #ABC123456 on file", "expected": ["insurance_id"], "notes": "policy with alphanum"},
+    {"id": "insurance-02", "text": "member #XY9876543", "expected": ["insurance_id"], "notes": "member"},
+    {"id": "insurance-03", "text": "subscriber: Z1234567", "expected": ["insurance_id"], "notes": "subscriber with colon"},
+    {"id": "insurance-fp-01", "text": "policy change next month", "expected": ["insurance_id"], "notes": "KNOWN FALSE POSITIVE: `[A-Z0-9]{6,}` with re.I matches lowercase words like 'change' (6 chars). Python behavior; TypeScript port must replicate."},
+    {"id": "insurance-neg-01", "text": "policy is key", "expected": [], "notes": "trailing word too short to trigger"},
+
+    {"id": "medrec-01", "text": "MR# 987654 in archive", "expected": ["med_record_alt"], "notes": "MR#"},
+    {"id": "medrec-02", "text": "Chart # 1234567", "expected": ["med_record_alt"], "notes": "Chart #"},
+    {"id": "medrec-03", "text": "Acct #: 5555555", "expected": ["med_record_alt"], "notes": "Acct"},
+    {"id": "medrec-neg-01", "text": "Med Rec is important", "expected": [], "notes": "no digits"},
+
+    {"id": "diagnosis-01", "text": "Dx: Type 2 diabetes", "expected": ["diagnosis_explicit"], "notes": "Dx abbr"},
+    {"id": "diagnosis-02", "text": "diagnosed with depression", "expected": ["diagnosis_explicit"], "notes": "diagnosed with"},
+    {"id": "diagnosis-03", "text": "diagnosis: hypertension", "expected": ["diagnosis_explicit"], "notes": "diagnosis:"},
+    {"id": "diagnosis-neg-01", "text": "diagnostic tools available", "expected": [], "notes": "diagnostic not diagnosis"},
+
+    {"id": "meddose-01", "text": "Lisinopril 20mg daily", "expected": ["med_dose"], "notes": "-pril + dose"},
+    {"id": "meddose-02", "text": "Atorvastatin 40 mg", "expected": ["med_dose"], "notes": "-statin"},
+    {"id": "meddose-03", "text": "Fluoxetine 40mg prescribed", "expected": ["med_dose"], "notes": "-ine"},
+    {"id": "meddose-04", "text": "Metoprolol 50 mg bid", "expected": ["med_dose"], "notes": "-olol"},
+    {"id": "meddose-05", "text": "Omeprazole 20 mg OTC", "expected": ["med_dose"], "notes": "-azole"},
+    {"id": "meddose-06", "text": "Amoxicillin 500 mg TID", "expected": ["med_dose"], "notes": "-illin"},
+    {"id": "meddose-07", "text": "Amlodipine 5 mg", "expected": ["med_dose"], "notes": "-pine"},
+    {"id": "meddose-neg-01", "text": "take some medicine", "expected": [], "notes": "no dose"},
+
+    {"id": "age-gender-01", "text": "72 y/o M presents with...", "expected": ["age_gender"], "notes": "y/o M"},
+    {"id": "age-gender-02", "text": "45yo F history of HTN", "expected": ["age_gender"], "notes": "yo F no slash"},
+    {"id": "age-gender-03", "text": "8 y/o f ", "expected": ["age_gender"], "notes": "lowercase f"},
+    {"id": "age-gender-neg-01", "text": "I/O ratio", "expected": [], "notes": "not y/o"},
+
+    {"id": "combo-01", "text": "patient: Jane Doe, DOB 05/10/1980, MRN: 7654321, Lisinopril 20mg", "expected": ["mrn", "dob", "patient_name", "med_dose"], "notes": "multiple PHI in one message (lowercase 'patient' needed due to case-sensitivity quirk)"},
+    {"id": "combo-02", "text": "Dr. Bob Smith saw 45yo M at 123 Main Street", "expected": ["full_name_with_title", "address", "age_gender"], "notes": "title+name, age+gender, address"},
+
+    {"id": "clean-01", "text": "Just a plain message with no clinical info", "expected": [], "notes": "fully clean — no PHI"},
+    {"id": "clean-02", "text": "What time is it? Can you help me pick a color?", "expected": [], "notes": "unrelated question"},
+    {"id": "clean-03", "text": "Write me a poem about the sea", "expected": [], "notes": "creative request, no PHI"},
+    {"id": "clean-04", "text": "Review this TypeScript function for bugs", "expected": [], "notes": "code review request"},
+    {"id": "clean-clinical-01", "text": "General discussion about SSRIs and their side effects", "expected": [], "notes": "clinical topic but no identifiers"},
+    {"id": "clean-clinical-02", "text": "What are common symptoms of depression?", "expected": [], "notes": "clinical question, no PHI"}
+  ],
+
+  "credential_fixtures": [
+    {"id": "anthropic-01", "text": "key: sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890-abc123_xyz789-def456", "expected": ["anthropic_api_key"], "notes": "typical Anthropic key"},
+    {"id": "anthropic-neg-01", "text": "sk-ant-short", "expected": [], "notes": "too short"},
+
+    {"id": "openai-01", "text": "sk-ABCDEF1234567890ABCDEF1234567890ABCDEF12", "expected": ["openai_api_key"], "notes": "legacy OpenAI key — 32+ alphanumeric"},
+    {"id": "openai-02", "text": "API key is sk-abcdef1234567890abcdefghij1234567890", "expected": ["openai_api_key"], "notes": "lowercase key"},
+    {"id": "openai-quirk-01", "text": "OPENAI_API_KEY=sk-proj-abcdefghijklmnopqrstuvwxyz1234567890abc", "expected": [], "notes": "KNOWN QUIRK: modern 'sk-proj-...' keys with hyphens do NOT match because regex is `sk-[A-Za-z0-9]{32,}` (no hyphens allowed). Python behavior; TypeScript port must replicate."},
+    {"id": "openai-neg-01", "text": "sk-short", "expected": [], "notes": "too short"},
+
+    {"id": "github-01", "text": "token ghp_abcdefghijklmnopqrstuvwxyz0123456789AB", "expected": ["github_pat"], "notes": "GitHub PAT — 36 chars after ghp_"},
+    {"id": "github-02", "text": "ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "expected": ["github_pat"], "notes": "PAT with 36 A chars"},
+    {"id": "github-neg-01", "text": "ghp_short", "expected": [], "notes": "too short"},
+
+    {"id": "cloudflare-01", "text": "CF_TOKEN=cftok_abcdefghijklmnopqrstuvwxyz1234567890ABCDEF", "expected": ["cloudflare_token"], "notes": "Cloudflare API token"},
+    {"id": "cloudflare-02", "text": "cfapi_abcdefghijklmnopqrstuvwxyz1234567890ABCDEFxx", "expected": ["cloudflare_token"], "notes": "Cloudflare 3-letter prefix"},
+
+    {"id": "bearer-01", "text": "Authorization: Bearer abcdefghijklmnopqrstuvwxyz12345678", "expected": ["bearer_long"], "notes": "long bearer token"},
+    {"id": "bearer-neg-01", "text": "Bearer xyz", "expected": [], "notes": "short bearer — no match"},
+
+    {"id": "ssh-01", "text": "-----BEGIN RSA PRIVATE KEY-----\\nMIIEowIBAAKCAQE...", "expected": ["ssh_private_key"], "notes": "RSA private key header"},
+    {"id": "ssh-02", "text": "-----BEGIN OPENSSH PRIVATE KEY-----", "expected": ["ssh_private_key"], "notes": "OPENSSH header"},
+    {"id": "ssh-03", "text": "-----BEGIN PRIVATE KEY-----", "expected": ["ssh_private_key"], "notes": "generic PKCS8 header"},
+
+    {"id": "matrix-01", "text": "access_token=syt_abcdefghijklmnopqrstuvwxyz1234567890ABCDEF", "expected": ["matrix_access_token"], "notes": "Matrix syt_ token"},
+    {"id": "matrix-neg-01", "text": "syt_tiny", "expected": [], "notes": "too short"},
+
+    {"id": "pg-01", "text": "db at postgresql://user:mypass@host:5432/db", "expected": ["postgres_uri"], "notes": "postgres URI"},
+    {"id": "pg-02", "text": "DATABASE_URL=postgres://u:p@localhost/d", "expected": ["postgres_uri"], "notes": "postgres:// variant"},
+    {"id": "pg-neg-01", "text": "postgresql://user@host", "expected": [], "notes": "no password — no match"},
+
+    {"id": "cred-clean-01", "text": "The weather is nice today", "expected": [], "notes": "fully clean"},
+    {"id": "cred-clean-02", "text": "I love ghp_enthusiasm about coding!", "expected": [], "notes": "ghp_ but not PAT-shaped"}
+  ],
+
+  "refusal_fixtures": [
+    {"id": "refusal-01", "text": "I cannot help with that request.", "expected": true, "notes": "I cannot at start"},
+    {"id": "refusal-02", "text": "I'm unable to provide that information.", "expected": true, "notes": "I'm unable"},
+    {"id": "refusal-03", "text": "I can't assist with illegal activities.", "expected": true, "notes": "I can't"},
+    {"id": "refusal-04", "text": "I'm sorry, but I can't do that.", "expected": true, "notes": "sorry pattern"},
+    {"id": "refusal-05", "text": "As an AI, I have limitations.", "expected": true, "notes": "As an AI"},
+    {"id": "refusal-06", "text": "I'm an AI and cannot make medical decisions.", "expected": true, "notes": "I'm an AI"},
+    {"id": "refusal-07", "text": "I don't feel comfortable discussing that topic.", "expected": true, "notes": "don't feel comfortable discussing"},
+    {"id": "refusal-08", "text": "Unfortunately, I can't help with this.", "expected": true, "notes": "Unfortunately I can't"},
+
+    {"id": "refusal-neg-01", "text": "Sure, here's how to do that...", "expected": false, "notes": "helpful response"},
+    {"id": "refusal-neg-02", "text": "The answer is 42.", "expected": false, "notes": "direct answer"},
+    {"id": "refusal-neg-03", "text": "Let me help you with that. Here's my analysis:", "expected": false, "notes": "helpful preamble"},
+    {"id": "refusal-neg-04", "text": "Well, I cannot stress enough how important this is.", "expected": false, "notes": "I cannot mid-sentence — regex anchors to start"}
+  ]
+}
