@@ -45,6 +45,7 @@ import { messageRouter } from './message';
 import { notebookRouter } from './notebook';
 import { notificationRouter } from './notification';
 import { oauthDeviceFlowRouter } from './oauthDeviceFlow';
+import { pantheonRouter } from './pantheon';
 import { pluginRouter } from './plugin';
 import { ragEvalRouter } from './ragEval';
 import { recentRouter } from './recent';
@@ -102,6 +103,7 @@ export const lambdaRouter = router({
   notebook: notebookRouter,
   notification: notificationRouter,
   oauthDeviceFlow: oauthDeviceFlowRouter,
+  pantheon: pantheonRouter,
   plugin: pluginRouter,
   ragEval: ragEvalRouter,
   recent: recentRouter,

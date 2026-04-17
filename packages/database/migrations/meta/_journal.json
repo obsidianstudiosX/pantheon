@@ -693,6 +693,13 @@
       "when": 1776234919716,
       "tag": "0098_add_document_history",
       "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1776585600000,
+      "tag": "0099_pantheon_kanban",
+      "breakpoints": true
     }
   ],
   "version": "6"

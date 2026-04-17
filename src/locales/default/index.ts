@@ -28,6 +28,7 @@ import models from './models';
 import notification from './notification';
 import oauth from './oauth';
 import onboarding from './onboarding';
+import pantheon from './pantheon';
 import plugin from './plugin';
 import portal from './portal';
 import providers from './providers';
@@ -76,6 +77,7 @@ const resources = {
   notification,
   oauth,
   onboarding,
+  pantheon,
   plugin,
   portal,
   providers,

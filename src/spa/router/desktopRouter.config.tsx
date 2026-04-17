@@ -537,6 +537,36 @@ export const desktopRoutes: RouteObject[] = [
         path: 'page',
       },
 
+      // Pantheon routes (private-fork zones)
+      {
+        children: [
+          {
+            element: redirectElement('/pantheon/kanban'),
+            index: true,
+          },
+          // Kanban (Work Rail)
+          {
+            children: [
+              {
+                element: dynamicElement(
+                  () => import('@/routes/(main)/(pantheon)/kanban'),
+                  'Desktop > Pantheon > Kanban',
+                ),
+                index: true,
+              },
+            ],
+            element: dynamicLayout(
+              () => import('@/routes/(main)/(pantheon)/kanban/_layout'),
+              'Desktop > Pantheon > Kanban > Layout',
+            ),
+            errorElement: <ErrorBoundary resetPath="/pantheon/kanban" />,
+            path: 'kanban',
+          },
+        ],
+        errorElement: <ErrorBoundary resetPath="/" />,
+        path: 'pantheon',
+      },
+
       // Default route - home page (handled by persistent layout)
       {
         index: true,

@@ -3,6 +3,7 @@ import {
   BrainCircuit,
   FilePenIcon,
   Image,
+  KanbanSquareIcon,
   LibraryBigIcon,
   Settings,
   ShapesIcon,
@@ -106,6 +107,15 @@ export const NAVIGATION_ROUTES: NavigationRoute[] = [
     path: '/settings',
     pathPrefix: '/settings',
   },
+  {
+    cmdkKey: 'cmdk.pantheonKanban',
+    electronKey: 'navigation.pantheonKanban',
+    icon: KanbanSquareIcon,
+    id: 'pantheon-kanban',
+    keywords: ['kanban', 'work rail', 'board', 'tasks', 'pantheon'],
+    path: '/pantheon/kanban',
+    pathPrefix: '/pantheon/kanban',
+  },
 ];
 
 /**
@@ -119,5 +129,13 @@ export const getRouteById = (id: string): NavigationRoute | undefined =>
  */
 export const getNavigableRoutes = (): NavigationRoute[] =>
   NAVIGATION_ROUTES.filter((r) =>
-    ['community', 'video', 'image', 'resource', 'page', 'memory'].includes(r.id),
+    [
+      'community',
+      'video',
+      'image',
+      'resource',
+      'page',
+      'memory',
+      'pantheon-kanban',
+    ].includes(r.id),
   );

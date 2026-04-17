@@ -27,6 +27,7 @@ const prefixes = {
   memory: 'mem',
   messageGroups: 'mg',
   messages: 'msg',
+  pantheonKanbanCards: 'pkc',
   plugins: 'plg',
   sessionGroups: 'sg',
   sessions: 'ssn',

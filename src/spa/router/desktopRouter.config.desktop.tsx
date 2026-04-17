@@ -57,6 +57,8 @@ import MemoryContextsPage from '@/routes/(main)/memory/contexts';
 import MemoryExperiencesPage from '@/routes/(main)/memory/experiences';
 import MemoryIdentitiesPage from '@/routes/(main)/memory/identities';
 import MemoryPreferencesPage from '@/routes/(main)/memory/preferences';
+import PantheonKanbanPage from '@/routes/(main)/(pantheon)/kanban';
+import PantheonKanbanLayout from '@/routes/(main)/(pantheon)/kanban/_layout';
 import PageIndexPage from '@/routes/(main)/page';
 import DesktopPageLayout from '@/routes/(main)/page/_layout';
 import PageDetailPage from '@/routes/(main)/page/[id]';
@@ -424,6 +426,30 @@ export const desktopRoutes: RouteObject[] = [
         element: <DesktopPageLayout />,
         errorElement: <ErrorBoundary resetPath="/page" />,
         path: 'page',
+      },
+
+      // Pantheon routes (private-fork zones)
+      {
+        children: [
+          {
+            element: redirectElement('/pantheon/kanban'),
+            index: true,
+          },
+          // Kanban (Work Rail)
+          {
+            children: [
+              {
+                element: <PantheonKanbanPage />,
+                index: true,
+              },
+            ],
+            element: <PantheonKanbanLayout />,
+            errorElement: <ErrorBoundary resetPath="/pantheon/kanban" />,
+            path: 'kanban',
+          },
+        ],
+        errorElement: <ErrorBoundary resetPath="/" />,
+        path: 'pantheon',
       },
 
       // Default route - home page (handled by persistent layout)

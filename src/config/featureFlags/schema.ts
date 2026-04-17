@@ -33,6 +33,9 @@ export const FeatureFlagsSchema = z.object({
   agent_onboarding: FeatureFlagValue.optional(),
   cloud_promotion: FeatureFlagValue.optional(),
 
+  // pantheon zones (private-fork work rail etc.)
+  pantheon_zone_kanban_enabled: FeatureFlagValue.optional(),
+
   // the flags below can only be used with commercial license
   // if you want to use it in the commercial usage
   // please contact us for more information: hello@lobehub.com
@@ -80,6 +83,8 @@ export const DEFAULT_FEATURE_FLAGS: IFeatureFlags = {
   agent_onboarding: isDev,
   cloud_promotion: false,
 
+  pantheon_zone_kanban_enabled: true,
+
   market: true,
   speech_to_text: true,
   changelog: true,
@@ -115,6 +120,8 @@ export const mapFeatureFlagsEnvToState = (config: IFeatureFlags, userId?: string
 
     showMarket: evaluateFeatureFlag(config.market, userId),
     enableSTT: evaluateFeatureFlag(config.speech_to_text, userId),
+
+    pantheonKanbanEnabled: evaluateFeatureFlag(config.pantheon_zone_kanban_enabled, userId),
 
     hideGitHub: evaluateFeatureFlag(config.commercial_hide_github, userId),
     hideDocs: evaluateFeatureFlag(config.commercial_hide_docs, userId),
