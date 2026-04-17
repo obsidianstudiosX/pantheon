@@ -1,26 +1,25 @@
 {
-  "name": "@lobehub/lobehub",
-  "version": "2.1.50",
-  "description": "LobeHub - an open-source,comprehensive AI Agent framework that supports speech synthesis, multimodal, and extensible Function Call plugin system. Supports one-click free deployment of your private ChatGPT/LLM web application.",
+  "name": "@obsidianstudiosX/pantheon",
+  "version": "2.1.52-pantheon.0",
+  "description": "Pantheon — a private-fork LobeHub-native AI agent workspace for the 26-agent Pantheon fleet with clinical PHI guardrails. Single-operator self-hosted deployment.",
   "keywords": [
-    "framework",
+    "pantheon",
+    "self-hosted",
     "chatbot",
-    "chatgpt",
     "nextjs",
     "vercel-ai",
     "openai",
-    "azure-openai",
-    "visual-model",
-    "tts",
-    "stt"
+    "anthropic",
+    "clinical",
+    "phi-guarded"
   ],
-  "homepage": "https://github.com/lobehub/lobehub",
+  "homepage": "https://github.com/obsidianstudiosX/pantheon",
   "bugs": {
-    "url": "https://github.com/lobehub/lobehub/issues/new/choose"
+    "url": "https://github.com/obsidianstudiosX/pantheon/issues/new/choose"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/lobehub/lobehub.git"
+    "url": "https://github.com/obsidianstudiosX/pantheon.git"
   },
   "license": "MIT",
   "author": "LobeHub <i@lobehub.com>",
