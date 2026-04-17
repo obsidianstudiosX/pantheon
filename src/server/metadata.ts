@@ -12,7 +12,7 @@ import { formatDescLength, formatTitleLength } from '@/utils/genOG';
 
 export class Meta {
   public generate({
-    description = 'LobeChat offers you the best ChatGPT, OLLaMA, Gemini, Claude WebUI user experience',
+    description = 'Pantheon — private AI workspace with the 26-agent fleet and clinical PHI guardrails. Forked from LobeHub.',
     title,
     image = OG_URL,
     url,
