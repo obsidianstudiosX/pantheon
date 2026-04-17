@@ -22,6 +22,8 @@ import { Link, useLocation } from 'react-router-dom';
 import ChangelogModal from '@/components/ChangelogModal';
 import HighlightNotification from '@/components/HighlightNotification';
 import { DOCUMENTS_REFER_URL, GITHUB } from '@/const/url';
+import Billboard from '@/features/Billboard';
+import { useBillboardMenuItems } from '@/features/Billboard/MenuItems';
 import ThemeButton from '@/features/User/UserPanel/ThemeButton';
 import { useFeedbackModal } from '@/hooks/useFeedbackModal';
 import { useNavLayout } from '@/hooks/useNavLayout';
@@ -43,6 +45,7 @@ const Footer = memo(() => {
   const { t } = useTranslation('common');
   const { analytics } = useAnalytics();
   const { footer } = useNavLayout();
+  const billboardMenuItems = useBillboardMenuItems();
   const isDevMode = useUserStore((s) => userGeneralSettingsSelectors.config(s).isDevMode);
   const location = useLocation();
   const isSettingsPage = location.pathname.startsWith('/settings');
@@ -202,6 +205,9 @@ const Footer = memo(() => {
             },
           ]
         : []),
+      ...(billboardMenuItems && billboardMenuItems.length > 0
+        ? [{ type: 'divider' as const }, ...billboardMenuItems]
+        : []),
     ],
     [
       footer.showSettingsEntry,
@@ -213,6 +219,7 @@ const Footer = memo(() => {
       handleOpenFeedbackModal,
       isWithinTimeWindow,
       handleOpenProductHuntCard,
+      billboardMenuItems,
     ],
   );
 
@@ -267,6 +274,7 @@ const Footer = memo(() => {
         onActionClick={handleProductHuntActionClick}
         onClose={handleCloseProductHuntCard}
       />
+      <Billboard />
     </>
   );
 });
