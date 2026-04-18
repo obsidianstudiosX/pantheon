@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 
 import { agents, pantheonAgentSnapshots } from '../../schemas';
 import type { PantheonAgentSnapshotItem } from '../../schemas/pantheonSnapshots';
@@ -196,14 +196,19 @@ export class SnapshotModel {
    * different JSON serialization.
    */
   async diff(aId: string, bId: string): Promise<SnapshotDiffResult> {
+    // Fetch ONLY the two snapshots being compared. An earlier version
+    // pulled every snapshot for the user (full jsonb configs) and scanned
+    // in memory, which grows linearly with snapshot count. `inArray`
+    // restricts the query to two rows; `userId` guard preserves tenant
+    // isolation (a snapshot belonging to another user is filtered out
+    // server-side — not returned as null).
     const rows = await this.db
       .select()
       .from(pantheonAgentSnapshots)
       .where(
         and(
           eq(pantheonAgentSnapshots.userId, this.userId),
-          // inArray would be cleaner but we keep the query simple — two lookups
-          // are fine for this low-volume path.
+          inArray(pantheonAgentSnapshots.id, [aId, bId]),
         ),
       );
 

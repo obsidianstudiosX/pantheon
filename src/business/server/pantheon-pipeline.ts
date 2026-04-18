@@ -175,9 +175,16 @@ export class PantheonChatPipeline {
       // Enforcement point: strict PHI + review_required => abort before LLM call.
       if (env.review_required && env.phi_guard_mode === 'strict') {
         // Log BEFORE throwing so operators see the block in telemetry.
+        // IMPORTANT: log COUNTS only, not category names. Pattern names
+        // like `ssn`, `mrn`, `dob` appearing in stdout flow through
+        // journald / syslog / external log sinks and disclose which PHI
+        // categories were in a user's message — a minimum-necessary
+        // disclosure even in single-operator deployments. The full
+        // categorization is available in the request audit trail; stdout
+        // gets counts.
 
         console.warn(
-          `[pantheon-pipeline] pre BLOCKED turn_type=${env.turn_type} stakes=${env.stakes} phi_types=[${env.phi_types.join(',')}] creds_found=[${env.credential_patterns_found.join(',')}] review_required=${env.review_required} reason=${env.review_reason ?? ''}`,
+          `[pantheon-pipeline] pre BLOCKED turn_type=${env.turn_type} stakes=${env.stakes} phi_count=${env.phi_types.length} creds_count=${env.credential_patterns_found.length} review_required=${env.review_required}`,
         );
         throw new PantheonReviewGateError(
           'Pantheon review gate: PHI detected in strict mode — operator sign-off required before this turn can execute',
@@ -191,8 +198,9 @@ export class PantheonChatPipeline {
         replaceLastUserText(payload.messages ?? [], userIndex, env.user_text);
       }
 
+      // COUNTS ONLY — see pre-BLOCKED comment above for rationale.
       console.info(
-        `[pantheon-pipeline] pre turn_type=${env.turn_type} stakes=${env.stakes} phi_types=[${env.phi_types.join(',')}] creds_found=[${env.credential_patterns_found.join(',')}] review_required=${env.review_required}`,
+        `[pantheon-pipeline] pre turn_type=${env.turn_type} stakes=${env.stakes} phi_count=${env.phi_types.length} creds_count=${env.credential_patterns_found.length} review_required=${env.review_required}`,
       );
     };
   }
