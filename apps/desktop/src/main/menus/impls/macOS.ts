@@ -226,19 +226,21 @@ export class MacOSMenu extends BaseMenuPlatform implements IMenuPlatform {
         submenu: [
           {
             click: async () => {
-              await shell.openExternal('https://lobehub.com');
+              await shell.openExternal('https://github.com/obsidianstudiosX/pantheon');
             },
             label: t('help.visitWebsite'),
           },
           {
             click: async () => {
-              await shell.openExternal('https://github.com/lobehub/lobe-chat');
+              await shell.openExternal('https://github.com/obsidianstudiosX/pantheon');
             },
             label: t('help.githubRepo'),
           },
           {
             click: async () => {
-              await shell.openExternal('https://github.com/lobehub/lobe-chat/issues/new/choose');
+              await shell.openExternal(
+                'https://github.com/obsidianstudiosX/pantheon/issues/new/choose',
+              );
             },
             label: t('help.reportIssue'),
           },
@@ -652,6 +654,15 @@ export class MacOSMenu extends BaseMenuPlatform implements IMenuPlatform {
         label: t('tray.show', { appName }),
       },
       {
+        click: () => this.app.browserManager.getMainWindow().hide(),
+        label: t('tray.hide', { appName }),
+      },
+      { type: 'separator' },
+      {
+        click: () => this.app.updaterManager.checkForUpdates({ manual: true }),
+        label: t('tray.checkForUpdates'),
+      },
+      {
         click: async () => {
           const mainWindow = this.app.browserManager.getMainWindow();
           mainWindow.show();
@@ -660,7 +671,7 @@ export class MacOSMenu extends BaseMenuPlatform implements IMenuPlatform {
         label: t('file.preferences'),
       },
       { type: 'separator' },
-      { label: t('tray.quit'), role: 'quit' },
+      { label: t('tray.quit', { appName }), role: 'quit' },
     ];
   }
 }

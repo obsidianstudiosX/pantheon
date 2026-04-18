@@ -177,13 +177,13 @@ export class LinuxMenu extends BaseMenuPlatform implements IMenuPlatform {
         submenu: [
           {
             click: async () => {
-              await shell.openExternal('https://lobehub.com');
+              await shell.openExternal('https://github.com/obsidianstudiosX/pantheon');
             },
             label: t('help.visitWebsite'),
           },
           {
             click: async () => {
-              await shell.openExternal('https://github.com/lobehub/lobe-chat');
+              await shell.openExternal('https://github.com/obsidianstudiosX/pantheon');
             },
             label: t('help.githubRepo'),
           },
@@ -431,15 +431,23 @@ export class LinuxMenu extends BaseMenuPlatform implements IMenuPlatform {
     return [
       {
         click: () => this.app.browserManager.showMainWindow(),
-        label: t('tray.open', { appName }),
+        label: t('tray.show', { appName }),
+      },
+      {
+        click: () => this.app.browserManager.getMainWindow().hide(),
+        label: t('tray.hide', { appName }),
       },
       { type: 'separator' },
+      {
+        click: () => this.app.updaterManager.checkForUpdates({ manual: true }),
+        label: t('tray.checkForUpdates'),
+      },
       {
         click: () => this.app.browserManager.retrieveByIdentifier('settings').show(),
         label: t('file.preferences'),
       },
       { type: 'separator' },
-      { label: t('tray.quit'), role: 'quit' },
+      { label: t('tray.quit', { appName }), role: 'quit' },
     ];
   }
 }

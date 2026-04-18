@@ -3,9 +3,8 @@
 import { type AuthorizationPhase, type AuthorizationProgress } from '@lobechat/electron-client-ipc';
 import { useWatchBroadcast } from '@lobechat/electron-client-ipc';
 import { Alert, Button, Center, Flexbox, Icon, Input, Text } from '@lobehub/ui';
-import { Divider } from 'antd';
 import { cssVar } from 'antd-style';
-import { Cloud, Server, Undo2Icon } from 'lucide-react';
+import { Server, Undo2Icon } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import urlJoin from 'url-join';
@@ -17,19 +16,24 @@ import { useIMECompositionEvent } from '@/hooks/useIMECompositionEvent';
 import { remoteServerService } from '@/services/electron/remoteServer';
 import { electronSystemService } from '@/services/electron/system';
 import { useElectronStore } from '@/store/electron';
-import { setDesktopAutoOidcFirstOpenHandled } from '@/utils/electron/autoOidc';
 
 import LobeMessage from '../components/LobeMessage';
+
+// --- Pantheon rebrand -----------------------------------------------------
+// LobeHub Cloud sign-in has been removed. Pantheon desktop connects only to
+// a user-configured server. The default URL below points at a local dev
+// server and can be overridden via the DEFAULT_PANTHEON_SERVER_URL env var
+// (picked up by the renderer at build time) or by DISABLE_LOBEHUB_CLOUD_AUTH
+// for belt-and-suspenders gating.
+const DEFAULT_PANTHEON_SERVER_URL =
+  (import.meta as unknown as { env?: Record<string, string | undefined> }).env
+    ?.DEFAULT_PANTHEON_SERVER_URL ?? 'http://127.0.0.1:3210';
 
 const LEGACY_LOCAL_DB_MIGRATION_GUIDE_URL = urlJoin(
   OFFICIAL_SITE,
   '/docs/usage/migrate-from-local-database',
 );
 
-// Login method type
-type LoginMethod = 'cloud' | 'selfhost';
-
-// Login status type
 type LoginStatus = 'idle' | 'loading' | 'success' | 'error';
 
 const authorizationPhaseI18nKeyMap: Record<AuthorizationPhase, string> = {
@@ -39,21 +43,6 @@ const authorizationPhaseI18nKeyMap: Record<AuthorizationPhase, string> = {
   waiting_for_auth: 'screen5.auth.phase.waitingForAuth',
 };
 
-const loginMethodMetas = {
-  cloud: {
-    descriptionKey: 'screen5.methods.cloud.description',
-    icon: Cloud,
-    id: 'cloud' as LoginMethod,
-    nameKey: 'screen5.methods.cloud.name',
-  },
-  selfhost: {
-    descriptionKey: 'screen5.methods.selfhost.description',
-    icon: Server,
-    id: 'selfhost' as LoginMethod,
-    nameKey: 'screen5.methods.selfhost.name',
-  },
-} as const satisfies Record<LoginMethod, unknown>;
-
 interface LoginStepProps {
   onBack: () => void;
   onNext: () => void;
@@ -61,13 +50,11 @@ interface LoginStepProps {
 
 const LoginStep = memo<LoginStepProps>(({ onBack, onNext }) => {
   const { t } = useTranslation('desktop-onboarding');
-  const [endpoint, setEndpoint] = useState('');
-  const [cloudLoginStatus, setCloudLoginStatus] = useState<LoginStatus>('idle');
+  const [endpoint, setEndpoint] = useState(DEFAULT_PANTHEON_SERVER_URL);
   const [authProgress, setAuthProgress] = useState<AuthorizationProgress | null>(null);
   const [selfhostLoginStatus, setSelfhostLoginStatus] = useState<LoginStatus>('idle');
   const [remoteError, setRemoteError] = useState<string | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const [showEndpoint, setShowEndpoint] = useState(false);
   const [hasLegacyLocalDb, setHasLegacyLocalDb] = useState(false);
   const [localRemainingSeconds, setLocalRemainingSeconds] = useState<number | null>(null);
   const { compositionProps, isComposingRef } = useIMECompositionEvent();
@@ -110,37 +97,14 @@ const LoginStep = memo<LoginStepProps>(({ onBack, onNext }) => {
     };
   }, []);
 
-  const isCloudAuthed = !!dataSyncConfig?.active && dataSyncConfig.storageMode === 'cloud';
   const isSelfHostAuthed = !!dataSyncConfig?.active && dataSyncConfig.storageMode === 'selfHost';
   const isSelfHostEndpointVerified =
     isSelfHostAuthed &&
     !!endpoint.trim() &&
     endpoint.trim() === (dataSyncConfig?.remoteServerUrl ?? '');
 
-  // Determine if user can proceed (either method succeeding is sufficient)
-  const canStart = () => {
-    return isCloudAuthed || cloudLoginStatus === 'success' || isSelfHostEndpointVerified;
-  };
+  const canStart = () => isSelfHostEndpointVerified;
 
-  // Handle cloud login
-  const handleCloudLogin = async () => {
-    if (!isDesktop) {
-      setRemoteError(t('screen5.errors.desktopOnlyOidc'));
-      setCloudLoginStatus('error');
-      return;
-    }
-
-    setRemoteError(null);
-    clearRemoteServerSyncError();
-    setCloudLoginStatus('loading');
-    setDesktopAutoOidcFirstOpenHandled();
-    await connectRemoteServer({
-      remoteServerUrl: dataSyncConfig?.remoteServerUrl,
-      storageMode: 'cloud',
-    });
-  };
-
-  // Handle self-hosted server connection
   const handleSelfhostConnect = async () => {
     if (!isDesktop) {
       setRemoteError(t('screen5.errors.desktopOnlyOidc'));
@@ -157,7 +121,6 @@ const LoginStep = memo<LoginStepProps>(({ onBack, onNext }) => {
     await connectRemoteServer({ remoteServerUrl: url, storageMode: 'selfHost' });
   };
 
-  // Sign out (disconnect remote sync authorization) and return to login selection
   const handleSignOut = async () => {
     if (isSigningOut) return;
 
@@ -169,36 +132,29 @@ const LoginStep = memo<LoginStepProps>(({ onBack, onNext }) => {
       await disconnectRemoteServer();
       await refreshServerConfig();
     } finally {
-      setCloudLoginStatus('idle');
       setSelfhostLoginStatus('idle');
-      setEndpoint('');
+      setEndpoint(DEFAULT_PANTHEON_SERVER_URL);
       setIsSigningOut(false);
     }
   };
 
-  // Sync local UI status with real remote config
   useEffect(() => {
-    if (isCloudAuthed) setCloudLoginStatus('success');
     if (isSelfHostEndpointVerified) setSelfhostLoginStatus('success');
-  }, [isCloudAuthed, isSelfHostEndpointVerified]);
+  }, [isSelfHostEndpointVerified]);
 
-  // If user changes self-host endpoint after success, require re-authorization.
   useEffect(() => {
     if (selfhostLoginStatus !== 'success') return;
     if (isSelfHostEndpointVerified) return;
     setSelfhostLoginStatus('idle');
   }, [isSelfHostEndpointVerified, selfhostLoginStatus]);
 
-  // Surface requestAuthorization errors reported via store
   useEffect(() => {
     const message = remoteServerSyncError?.message;
     if (!message) return;
     setRemoteError(message);
-    if (cloudLoginStatus === 'loading') setCloudLoginStatus('error');
     if (selfhostLoginStatus === 'loading') setSelfhostLoginStatus('error');
-  }, [remoteServerSyncError?.message, cloudLoginStatus, selfhostLoginStatus]);
+  }, [remoteServerSyncError?.message, selfhostLoginStatus]);
 
-  // Watch broadcasts from main process (polling result)
   useWatchBroadcast('authorizationSuccessful', async () => {
     setRemoteError(null);
     clearRemoteServerSyncError();
@@ -209,20 +165,17 @@ const LoginStep = memo<LoginStepProps>(({ onBack, onNext }) => {
   useWatchBroadcast('authorizationFailed', ({ error }) => {
     setRemoteError(error);
     setAuthProgress(null);
-    if (cloudLoginStatus === 'loading') setCloudLoginStatus('error');
     if (selfhostLoginStatus === 'loading') setSelfhostLoginStatus('error');
   });
 
   useWatchBroadcast('authorizationProgress', (progress) => {
     setAuthProgress(progress);
     if (progress.phase === 'cancelled') {
-      setCloudLoginStatus('idle');
       setSelfhostLoginStatus('idle');
       setAuthProgress(null);
     }
   });
 
-  // Sync local countdown from authProgress
   useEffect(() => {
     if (authProgress) {
       const seconds = Math.max(
@@ -235,7 +188,6 @@ const LoginStep = memo<LoginStepProps>(({ onBack, onNext }) => {
     }
   }, [authProgress]);
 
-  // Decrement local countdown every second for smooth UI updates
   useEffect(() => {
     if (localRemainingSeconds === null || localRemainingSeconds <= 0) return;
 
@@ -253,115 +205,11 @@ const LoginStep = memo<LoginStepProps>(({ onBack, onNext }) => {
     setRemoteError(null);
     clearRemoteServerSyncError();
 
-    setCloudLoginStatus('idle');
     setSelfhostLoginStatus('idle');
     setAuthProgress(null);
     await remoteServerService.cancelAuthorization();
   };
 
-  // Render Cloud login content
-  const renderCloudContent = () => {
-    if (cloudLoginStatus === 'success') {
-      return (
-        <Flexbox gap={16} style={{ width: '100%' }}>
-          <Alert
-            description={t('authResult.success.desc')}
-            style={{ width: '100%' }}
-            title={t('authResult.success.title')}
-            type={'success'}
-          />
-          <UserInfo
-            style={{
-              background: cssVar.colorFillSecondary,
-              borderRadius: 8,
-            }}
-          />
-          <Button
-            block
-            disabled={isSigningOut || isConnectingServer}
-            icon={Cloud}
-            size={'large'}
-            type={'default'}
-            onClick={handleSignOut}
-          >
-            {isSigningOut ? t('screen5.actions.signingOut') : t('screen5.actions.signOut')}
-          </Button>
-        </Flexbox>
-      );
-    }
-
-    if (cloudLoginStatus === 'error') {
-      const errorMessage = remoteError?.toLowerCase().includes('timed out')
-        ? t('screen5.errors.timedOut')
-        : remoteError || t('authResult.failed.desc');
-
-      return (
-        <Flexbox gap={16} style={{ width: '100%' }}>
-          <Alert
-            description={errorMessage}
-            title={t('authResult.failed.title')}
-            type={'secondary'}
-          />
-          <Button
-            block
-            icon={Cloud}
-            size={'large'}
-            type={'primary'}
-            onClick={() => setCloudLoginStatus('idle')}
-          >
-            {t('screen5.actions.tryAgain')}
-          </Button>
-        </Flexbox>
-      );
-    }
-
-    if (cloudLoginStatus === 'loading') {
-      const phaseText = t(authorizationPhaseI18nKeyMap[authProgress?.phase ?? 'browser_opened'], {
-        defaultValue: t('screen5.actions.signingIn'),
-      });
-
-      return (
-        <Flexbox gap={8} style={{ width: '100%' }}>
-          <Button block disabled={true} icon={Cloud} loading={true} size={'large'} type={'primary'}>
-            {t('screen5.actions.signingIn')}
-          </Button>
-          <Text style={{ color: cssVar.colorTextDescription }} type={'secondary'}>
-            {phaseText}
-          </Text>
-          <Flexbox horizontal align={'center'} justify={'space-between'}>
-            {localRemainingSeconds !== null ? (
-              <Text style={{ color: cssVar.colorTextDescription }} type={'secondary'}>
-                {t('screen5.auth.remaining', {
-                  time: localRemainingSeconds,
-                })}
-              </Text>
-            ) : (
-              <div />
-            )}
-            <Button size={'small'} type={'text'} onClick={handleCancelAuth}>
-              {t('screen5.actions.cancel')}
-            </Button>
-          </Flexbox>
-        </Flexbox>
-      );
-    }
-
-    return (
-      <Button
-        block
-        disabled={isConnectingServer}
-        icon={Cloud}
-        loading={false}
-        size={'large'}
-        type={'primary'}
-        onClick={handleCloudLogin}
-      >
-        {t('screen5.actions.signInCloud')}
-      </Button>
-    );
-  };
-
-  // Render Self-host login content
   const renderSelfhostContent = () => {
     if (selfhostLoginStatus === 'success') {
       return (
@@ -451,7 +299,7 @@ const LoginStep = memo<LoginStepProps>(({ onBack, onNext }) => {
 
     return (
       <Flexbox gap={16} style={{ width: '100%' }}>
-        <Text color={cssVar.colorTextSecondary}>{t(loginMethodMetas.selfhost.descriptionKey)}</Text>
+        <Text color={cssVar.colorTextSecondary}>{t('screen5.methods.selfhost.description')}</Text>
         <Input
           placeholder={t('screen5.selfhost.endpointPlaceholder')}
           prefix={<Icon icon={Server} style={{ marginRight: 4 }} />}
@@ -501,7 +349,7 @@ const LoginStep = memo<LoginStepProps>(({ onBack, onNext }) => {
       </Flexbox>
 
       <Flexbox align={'flex-start'} gap={16} style={{ width: '100%' }} width={'100%'}>
-        {renderCloudContent()}
+        {renderSelfhostContent()}
         <Flexbox horizontal justify={'center'} style={{ width: '100%' }}>
           {hasLegacyLocalDb && (
             <Button
@@ -515,30 +363,6 @@ const LoginStep = memo<LoginStepProps>(({ onBack, onNext }) => {
             </Button>
           )}
         </Flexbox>
-        {!showEndpoint ? (
-          <Center width={'100%'}>
-            <Button
-              type={'text'}
-              style={{
-                color: cssVar.colorTextSecondary,
-              }}
-              onClick={() => setShowEndpoint(true)}
-            >
-              {t(loginMethodMetas.selfhost.descriptionKey)}
-            </Button>
-          </Center>
-        ) : (
-          <>
-            <Divider>
-              <Text fontSize={12} type={'secondary'}>
-                OR
-              </Text>
-            </Divider>
-
-            {/* Self-host option */}
-            {renderSelfhostContent()}
-          </>
-        )}
       </Flexbox>
       {canStart() && (
         <Flexbox horizontal justify={'space-between'} style={{ marginTop: 32 }}>
