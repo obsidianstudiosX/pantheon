@@ -218,6 +218,8 @@ export default {
 
   'cmdk.pantheonKanban': 'Open Work Rail kanban',
 
+  'cmdk.pantheonNP': 'Open NP zone',
+
   'cmdk.pantheonTopology': 'Open Pantheon fabric topology',
 
   'cmdk.resource': 'Resources',
@@ -515,6 +517,7 @@ export default {
   'tab.memory': 'Memory',
   'tab.pages': 'Pages',
   'tab.pantheonKanban': 'Work Rail',
+  'tab.pantheonNP': 'NP Zone',
   'tab.pantheonTopology': 'Fabric',
   'tab.resource': 'Resources',
   'tab.search': 'Search',

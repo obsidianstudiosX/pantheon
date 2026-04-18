@@ -580,6 +580,24 @@ export const desktopRoutes: RouteObject[] = [
             errorElement: <ErrorBoundary resetPath="/pantheon/topology" />,
             path: 'topology',
           },
+          // NP (Submissions + Portal + Resources)
+          {
+            children: [
+              {
+                element: dynamicElement(
+                  () => import('@/routes/(main)/(pantheon)/np'),
+                  'Desktop > Pantheon > NP',
+                ),
+                index: true,
+              },
+            ],
+            element: dynamicLayout(
+              () => import('@/routes/(main)/(pantheon)/np/_layout'),
+              'Desktop > Pantheon > NP > Layout',
+            ),
+            errorElement: <ErrorBoundary resetPath="/pantheon/np" />,
+            path: 'np',
+          },
         ],
         errorElement: <ErrorBoundary resetPath="/" />,
         path: 'pantheon',

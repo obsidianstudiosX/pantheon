@@ -28,6 +28,8 @@ const prefixes = {
   messageGroups: 'mg',
   messages: 'msg',
   pantheonKanbanCards: 'pkc',
+  pantheonNpResources: 'pnr',
+  pantheonNpSubmissions: 'pns',
   plugins: 'plg',
   sessionGroups: 'sg',
   sessions: 'ssn',

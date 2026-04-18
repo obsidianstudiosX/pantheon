@@ -21,6 +21,7 @@ export default {
   'navigation.page': 'Page',
   'navigation.pages': 'Pages',
   'navigation.pantheonKanban': 'Work Rail',
+  'navigation.pantheonNP': 'NP Zone',
   'navigation.pantheonTopology': 'Fabric',
   'navigation.pin': 'Pin',
   'navigation.pinned': 'Pinned',

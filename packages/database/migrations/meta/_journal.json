@@ -700,6 +700,13 @@
       "when": 1776585600000,
       "tag": "0099_pantheon_kanban",
       "breakpoints": true
+    },
+    {
+      "idx": 103,
+      "version": "7",
+      "when": 1776931200000,
+      "tag": "0103_pantheon_np",
+      "breakpoints": true
     }
   ],
   "version": "6"
