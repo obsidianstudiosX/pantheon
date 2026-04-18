@@ -107,8 +107,7 @@ export const useNavLayout = (): NavLayout => {
           title: t('tab.pantheonSnapshots'),
           url: '/pantheon/snapshots',
         },
-      ] as NavItem[],
-    [t, showMarket, pantheonKanbanEnabled, pantheonSnapshotsEnabled],
+        {
           hidden: !pantheonTopologyEnabled,
           icon: getRouteById('pantheon-topology')!.icon,
           key: 'pantheon-topology',
@@ -122,8 +121,7 @@ export const useNavLayout = (): NavLayout => {
           title: t('tab.pantheonNP'),
           url: '/pantheon/np',
         },
-      ] as NavItem[],
-    [t, showMarket, pantheonKanbanEnabled, pantheonNPEnabled, pantheonTopologyEnabled],
+        {
           hidden: !pantheonClinicalChartReviewEnabled,
           icon: getRouteById('pantheon-chart-review')!.icon,
           key: 'pantheon-chart-review',
@@ -131,7 +129,15 @@ export const useNavLayout = (): NavLayout => {
           url: '/pantheon/clinical/chart-review',
         },
       ] as NavItem[],
-    [t, showMarket, pantheonKanbanEnabled, pantheonClinicalChartReviewEnabled],
+    [
+      t,
+      showMarket,
+      pantheonKanbanEnabled,
+      pantheonSnapshotsEnabled,
+      pantheonTopologyEnabled,
+      pantheonNPEnabled,
+      pantheonClinicalChartReviewEnabled,
+    ],
   );
 
   const footer = useMemo(
