@@ -35,6 +35,7 @@ export const FeatureFlagsSchema = z.object({
 
   // pantheon zones (private-fork work rail etc.)
   pantheon_zone_kanban_enabled: FeatureFlagValue.optional(),
+  pantheon_zone_snapshots_enabled: FeatureFlagValue.optional(),
 
   // the flags below can only be used with commercial license
   // if you want to use it in the commercial usage
@@ -84,6 +85,7 @@ export const DEFAULT_FEATURE_FLAGS: IFeatureFlags = {
   cloud_promotion: false,
 
   pantheon_zone_kanban_enabled: true,
+  pantheon_zone_snapshots_enabled: true,
 
   market: true,
   speech_to_text: true,
@@ -122,6 +124,10 @@ export const mapFeatureFlagsEnvToState = (config: IFeatureFlags, userId?: string
     enableSTT: evaluateFeatureFlag(config.speech_to_text, userId),
 
     pantheonKanbanEnabled: evaluateFeatureFlag(config.pantheon_zone_kanban_enabled, userId),
+    pantheonSnapshotsEnabled: evaluateFeatureFlag(
+      config.pantheon_zone_snapshots_enabled,
+      userId,
+    ),
 
     hideGitHub: evaluateFeatureFlag(config.commercial_hide_github, userId),
     hideDocs: evaluateFeatureFlag(config.commercial_hide_docs, userId),

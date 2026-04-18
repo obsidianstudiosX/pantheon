@@ -562,6 +562,24 @@ export const desktopRoutes: RouteObject[] = [
             errorElement: <ErrorBoundary resetPath="/pantheon/kanban" />,
             path: 'kanban',
           },
+          // Snapshots (Agent Config Freeze / Restore / Diff)
+          {
+            children: [
+              {
+                element: dynamicElement(
+                  () => import('@/routes/(main)/(pantheon)/snapshots'),
+                  'Desktop > Pantheon > Snapshots',
+                ),
+                index: true,
+              },
+            ],
+            element: dynamicLayout(
+              () => import('@/routes/(main)/(pantheon)/snapshots/_layout'),
+              'Desktop > Pantheon > Snapshots > Layout',
+            ),
+            errorElement: <ErrorBoundary resetPath="/pantheon/snapshots" />,
+            path: 'snapshots',
+          },
         ],
         errorElement: <ErrorBoundary resetPath="/" />,
         path: 'pantheon',
