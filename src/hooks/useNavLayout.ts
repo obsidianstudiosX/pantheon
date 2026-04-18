@@ -35,14 +35,13 @@ export interface NavLayout {
 export const useNavLayout = (): NavLayout => {
   const { t } = useTranslation('common');
   const toggleCommandMenu = useGlobalStore((s) => s.toggleCommandMenu);
-  const { showMarket, hideGitHub, pantheonKanbanEnabled, pantheonSnapshotsEnabled } =
-    useServerConfigStore(featureFlagsSelectors);
   const {
     showMarket,
     hideGitHub,
     pantheonKanbanEnabled,
-    pantheonNPEnabled,
+    pantheonSnapshotsEnabled,
     pantheonTopologyEnabled,
+    pantheonNPEnabled,
     pantheonClinicalChartReviewEnabled,
   } = useServerConfigStore(featureFlagsSelectors);
 
