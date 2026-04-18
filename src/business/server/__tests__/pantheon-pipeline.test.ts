@@ -60,12 +60,13 @@ describe('PantheonChatPipeline.buildPreHook', () => {
     expect(typeof last.content).toBe('string');
     expect(last.content as string).not.toContain(credential);
     expect(last.content as string).toContain('[REDACTED:anthropic_api_key]');
-    // Telemetry must surface the credential type.
+    // Telemetry must surface the credential count (names are deliberately
+    // omitted from stdout — see pantheon-pipeline.ts PHI-log redaction fix).
     const infoCall = logInfo.mock.calls.find((c) =>
       String(c[0]).startsWith('[pantheon-pipeline] pre'),
     );
     expect(infoCall).toBeDefined();
-    expect(String(infoCall![0])).toContain('creds_found=[anthropic_api_key]');
+    expect(String(infoCall![0])).toContain('creds_count=1');
   });
 
   it('throws PantheonReviewGateError on strict-mode PHI', async () => {
@@ -109,8 +110,9 @@ describe('PantheonChatPipeline.buildPreHook', () => {
       String(c[0]).startsWith('[pantheon-pipeline] pre'),
     );
     expect(infoCall).toBeDefined();
-    expect(String(infoCall![0])).toContain('phi_types=[]');
-    expect(String(infoCall![0])).toContain('creds_found=[]');
+    // Clean text → both counts are zero.
+    expect(String(infoCall![0])).toContain('phi_count=0');
+    expect(String(infoCall![0])).toContain('creds_count=0');
   });
 });
 
