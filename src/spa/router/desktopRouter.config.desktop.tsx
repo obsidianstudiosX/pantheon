@@ -65,8 +65,6 @@ import MemoryIdentitiesPage from '@/routes/(main)/memory/identities';
 import MemoryPreferencesPage from '@/routes/(main)/memory/preferences';
 import PantheonChartReviewPage from '@/routes/(main)/(pantheon)/clinical/chart-review';
 import PantheonChartReviewLayout from '@/routes/(main)/(pantheon)/clinical/chart-review/_layout';
-import PantheonKanbanPage from '@/routes/(main)/(pantheon)/kanban';
-import PantheonKanbanLayout from '@/routes/(main)/(pantheon)/kanban/_layout';
 import PantheonSnapshotsPage from '@/routes/(main)/(pantheon)/snapshots';
 import PantheonSnapshotsLayout from '@/routes/(main)/(pantheon)/snapshots/_layout';
 import PageIndexPage from '@/routes/(main)/page';
