@@ -143,5 +143,7 @@ export default {
   'window.close': 'Close window',
   'window.maximize': 'Maximize window',
   'window.minimize': 'Minimize window',
+  'window.pinToTop': 'Pin on top',
   'window.restore': 'Restore window',
+  'window.unpinFromTop': 'Unpin from top',
 };
