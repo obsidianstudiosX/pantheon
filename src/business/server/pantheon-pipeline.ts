@@ -11,18 +11,28 @@
  * default off. Clinical operator sign-off is required before enabling in
  * any environment touching real users. See model-runtime.ts for the gate.
  *
- * Response mutation limitation (streaming): the ModelRuntime calls
- * `onChatFinal` after the stream has already been consumed by the caller,
- * so we cannot mutate the already-delivered bytes. The post-hook therefore
- * runs scan-only redaction against the finalized text and emits a
- * structured `post-redact leaked=[...]` log line when new credentials
- * appear in the response — this is a leak alert, important telemetry for
- * the security team. A follow-up phase can route this through a proper
- * audit sink.
+ * Response mutation (streaming): as of Phase 3.3, ACTUAL redaction of
+ * leaked credentials in streamed SSE responses happens at the HTTP
+ * response layer via `createCredentialRedactingTransform` (see
+ * ./streaming-credential-redactor.ts), wired into the chat route at
+ * src/app/(backend)/webapi/chat/[provider]/route.ts. That transform
+ * scrubs credentials from the bytes BEFORE they reach the HTTP client,
+ * closing the log-only tradeoff.
+ *
+ * The `onChatFinal` post-hook below is now a SECONDARY ALERT: it runs
+ * after the transform and catches the edge cases the transform cannot
+ * reach — primarily non-streaming JSON responses (where no SSE stream
+ * exists to pipe through), and any code path that bypasses the
+ * `/webapi/chat/[provider]` route handler. When it fires, it means the
+ * stream transform either wasn't wrapped or didn't match — treat as a
+ * routing bug alarm. Log telemetry is emitted with the tag
+ * `post-redact`; the streaming transform emits `stream-redact` so the
+ * two sources can be distinguished in aggregated logs.
  */
 import type {
   ChatMethodOptions,
   ChatStreamPayload,
+  ModelRuntimeHooks,
   OnFinishData,
   OpenAIChatMessage,
 } from '@lobechat/model-runtime';
@@ -35,19 +45,19 @@ import {
   applySizeGuard,
   createTurnEnvelope,
   isRefusal,
-  redactCredentials,
   type PhiGuardConfig,
+  redactCredentials,
   type ReviewGateConfig,
   type TurnEnvelope,
 } from '@/server/pantheon/hooks';
 
 export interface PantheonPipelineConfig {
+  /** Max input token budget for size-guard. */
+  maxInputTokens?: number;
   /** PHI guard trigger config — defaults to informational mode. */
   phiGuard?: PhiGuardConfig;
   /** Review gate registry + roles — defaults to the Python constant set. */
   reviewGate?: ReviewGateConfig;
-  /** Max input token budget for size-guard. */
-  maxInputTokens?: number;
 }
 
 /**
@@ -89,11 +99,7 @@ function extractLastUserText(messages: OpenAIChatMessage[]): {
  * non-text multimodal parts. If the original content was a string we keep
  * it as a string; if it was an array we swap only the text parts.
  */
-function replaceLastUserText(
-  messages: OpenAIChatMessage[],
-  index: number,
-  newText: string,
-): void {
+function replaceLastUserText(messages: OpenAIChatMessage[], index: number, newText: string): void {
   if (index < 0) return;
   const m = messages[index];
   const c = m.content;
@@ -125,11 +131,7 @@ export class PantheonChatPipeline {
   private readonly provider: string | undefined;
   private readonly config: PantheonPipelineConfig;
 
-  constructor(
-    userId: string,
-    provider: string | undefined,
-    config: PantheonPipelineConfig = {},
-  ) {
+  constructor(userId: string, provider: string | undefined, config: PantheonPipelineConfig = {}) {
     this.userId = userId;
     this.provider = provider;
     this.config = config;
@@ -143,8 +145,7 @@ export class PantheonChatPipeline {
   } {
     const { text, index } = extractLastUserText(payload.messages ?? []);
     const systemMsg = (payload.messages ?? []).find((m) => m.role === 'system');
-    const systemText =
-      systemMsg && typeof systemMsg.content === 'string' ? systemMsg.content : '';
+    const systemText = systemMsg && typeof systemMsg.content === 'string' ? systemMsg.content : '';
 
     const env = createTurnEnvelope({
       agent_id: this.userId,
@@ -161,9 +162,7 @@ export class PantheonChatPipeline {
    * → size-guard → review-gate in order. Mutates `payload.messages` when
    * redaction/truncation changed the user text.
    */
-  buildPreHook(): NonNullable<
-    import('@lobechat/model-runtime').ModelRuntimeHooks['beforeChat']
-  > {
+  buildPreHook(): NonNullable<ModelRuntimeHooks['beforeChat']> {
     return async (payload: ChatStreamPayload, _options?: ChatMethodOptions) => {
       const { env, userIndex, originalText } = this.buildEnvelope(payload);
 
@@ -176,7 +175,7 @@ export class PantheonChatPipeline {
       // Enforcement point: strict PHI + review_required => abort before LLM call.
       if (env.review_required && env.phi_guard_mode === 'strict') {
         // Log BEFORE throwing so operators see the block in telemetry.
-        // eslint-disable-next-line no-console
+
         console.warn(
           `[pantheon-pipeline] pre BLOCKED turn_type=${env.turn_type} stakes=${env.stakes} phi_types=[${env.phi_types.join(',')}] creds_found=[${env.credential_patterns_found.join(',')}] review_required=${env.review_required} reason=${env.review_reason ?? ''}`,
         );
@@ -192,7 +191,6 @@ export class PantheonChatPipeline {
         replaceLastUserText(payload.messages ?? [], userIndex, env.user_text);
       }
 
-      // eslint-disable-next-line no-console
       console.info(
         `[pantheon-pipeline] pre turn_type=${env.turn_type} stakes=${env.stakes} phi_types=[${env.phi_types.join(',')}] creds_found=[${env.credential_patterns_found.join(',')}] review_required=${env.review_required}`,
       );
@@ -203,9 +201,7 @@ export class PantheonChatPipeline {
    * Post-LLM hook. Scans the finalized response for leaked credentials and
    * flags refusals. Log-only: we cannot mutate already-streamed bytes.
    */
-  buildPostHook(): NonNullable<
-    import('@lobechat/model-runtime').ModelRuntimeHooks['onChatFinal']
-  > {
+  buildPostHook(): NonNullable<ModelRuntimeHooks['onChatFinal']> {
     return async (data: OnFinishData, context) => {
       const text = data?.text ?? '';
       if (!text) return;
@@ -216,7 +212,7 @@ export class PantheonChatPipeline {
       if (redacted.length > 0) {
         // LEAK ALERT — response already streamed to the user, we can only
         // log. A future phase should route this to the clinical audit sink.
-        // eslint-disable-next-line no-console
+
         console.error(
           `[pantheon-pipeline] post-redact leaked=[${[...new Set(redacted)].join(',')}] userId=${this.userId} provider=${this.provider ?? ''} model=${context?.payload?.model ?? ''}`,
         );
@@ -228,20 +224,15 @@ export class PantheonChatPipeline {
       const { env } = this.buildEnvelope(context.payload);
       applyRouter(env);
 
-      // eslint-disable-next-line no-console
-      console.info(
-        `[pantheon-pipeline] post turn_type=${env.turn_type} refusal=${refused}`,
-      );
+      console.info(`[pantheon-pipeline] post turn_type=${env.turn_type} refusal=${refused}`);
     };
   }
 
   /** Error hook — log-only, does not suppress the error. */
-  buildErrorHook(): NonNullable<
-    import('@lobechat/model-runtime').ModelRuntimeHooks['onChatError']
-  > {
+  buildErrorHook(): NonNullable<ModelRuntimeHooks['onChatError']> {
     return (error, context) => {
       const msg = error instanceof Error ? error.message : String(error);
-      // eslint-disable-next-line no-console
+
       console.error(
         `[pantheon-pipeline] chat-error userId=${this.userId} provider=${this.provider ?? ''} model=${context?.payload?.model ?? ''} error=${msg}`,
       );
