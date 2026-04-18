@@ -114,7 +114,7 @@ export const desktopRoutes: RouteObject[] = [
               },
             ],
             element: <DesktopChatLayout />,
-            errorElement: <ErrorBoundary resetPath="/agent" />,
+            errorElement: <ErrorBoundary />,
             path: ':aid',
           },
         ],
@@ -140,7 +140,7 @@ export const desktopRoutes: RouteObject[] = [
               },
             ],
             element: <DesktopGroupLayout />,
-            errorElement: <ErrorBoundary resetPath="/group" />,
+            errorElement: <ErrorBoundary />,
             path: ':gid',
           },
         ],
@@ -240,7 +240,7 @@ export const desktopRoutes: RouteObject[] = [
           },
         ],
         element: <CommunityLayout />,
-        errorElement: <ErrorBoundary resetPath="/community" />,
+        errorElement: <ErrorBoundary />,
         path: 'community',
       },
 
@@ -274,7 +274,7 @@ export const desktopRoutes: RouteObject[] = [
           },
         ],
         element: <ResourceLayout />,
-        errorElement: <ErrorBoundary resetPath="/resource" />,
+        errorElement: <ErrorBoundary />,
         path: 'resource',
       },
 
@@ -307,7 +307,7 @@ export const desktopRoutes: RouteObject[] = [
           },
         ],
         element: <SettingsLayout />,
-        errorElement: <ErrorBoundary resetPath="/settings" />,
+        errorElement: <ErrorBoundary />,
         path: 'settings',
       },
 
@@ -340,7 +340,7 @@ export const desktopRoutes: RouteObject[] = [
           },
         ],
         element: <DesktopMemoryLayout />,
-        errorElement: <ErrorBoundary resetPath="/memory" />,
+        errorElement: <ErrorBoundary />,
         path: 'memory',
       },
 
@@ -353,7 +353,7 @@ export const desktopRoutes: RouteObject[] = [
           },
         ],
         element: <DesktopVideoLayout />,
-        errorElement: <ErrorBoundary resetPath="/video" />,
+        errorElement: <ErrorBoundary />,
         path: 'video',
       },
 
@@ -366,7 +366,7 @@ export const desktopRoutes: RouteObject[] = [
           },
         ],
         element: <DesktopImageLayout />,
-        errorElement: <ErrorBoundary resetPath="/image" />,
+        errorElement: <ErrorBoundary />,
         path: 'image',
       },
 
@@ -415,7 +415,7 @@ export const desktopRoutes: RouteObject[] = [
           },
         ],
         element: <EvalLayout />,
-        errorElement: <ErrorBoundary resetPath="/eval" />,
+        errorElement: <ErrorBoundary />,
         path: 'eval',
       },
 
@@ -432,7 +432,7 @@ export const desktopRoutes: RouteObject[] = [
           },
         ],
         element: <DesktopPageLayout />,
-        errorElement: <ErrorBoundary resetPath="/page" />,
+        errorElement: <ErrorBoundary />,
         path: 'page',
       },
 
@@ -527,7 +527,7 @@ export const desktopRoutes: RouteObject[] = [
       },
     ],
     element: <DesktopMainLayout />,
-    errorElement: <ErrorBoundary resetPath="/" />,
+    errorElement: <ErrorBoundary />,
     path: '/',
   },
 
@@ -549,25 +549,25 @@ export const desktopRoutes: RouteObject[] = [
 // Desktop onboarding route (Electron only in .desktop.tsx)
 desktopRoutes.push({
   element: <DesktopOnboarding />,
-  errorElement: <ErrorBoundary resetPath="/" />,
+  errorElement: <ErrorBoundary />,
   path: '/desktop-onboarding',
 });
 
 // Web onboarding aliases redirect to the desktop-specific onboarding flow.
 desktopRoutes.push({
   element: redirectElement('/desktop-onboarding'),
-  errorElement: <ErrorBoundary resetPath="/" />,
+  errorElement: <ErrorBoundary />,
   path: '/onboarding',
 });
 
 desktopRoutes.push({
   element: redirectElement('/desktop-onboarding'),
-  errorElement: <ErrorBoundary resetPath="/" />,
+  errorElement: <ErrorBoundary />,
   path: '/onboarding/agent',
 });
 
 desktopRoutes.push({
   element: redirectElement('/desktop-onboarding'),
-  errorElement: <ErrorBoundary resetPath="/" />,
+  errorElement: <ErrorBoundary />,
   path: '/onboarding/classic',
 });
