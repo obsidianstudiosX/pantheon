@@ -31,6 +31,8 @@
   "navigation.pages": "Pages",
   "navigation.pantheonKanban": "Work Rail",
   "navigation.pantheonSnapshots": "Agent Snapshots",
+  "navigation.pantheonNP": "NP Zone",
+  "navigation.pantheonTopology": "Fabric",
   "navigation.pin": "Pin",
   "navigation.pinned": "Pinned",
   "navigation.provider": "Provider",

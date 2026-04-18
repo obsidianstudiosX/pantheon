@@ -13,6 +13,12 @@ import ImagePage from '@/routes/(main)/(create)/image';
 import DesktopImageLayout from '@/routes/(main)/(create)/image/_layout';
 import VideoPage from '@/routes/(main)/(create)/video';
 import DesktopVideoLayout from '@/routes/(main)/(create)/video/_layout';
+import PantheonKanbanPage from '@/routes/(main)/(pantheon)/kanban';
+import PantheonKanbanLayout from '@/routes/(main)/(pantheon)/kanban/_layout';
+import PantheonNPPage from '@/routes/(main)/(pantheon)/np';
+import PantheonNPLayout from '@/routes/(main)/(pantheon)/np/_layout';
+import PantheonTopologyPage from '@/routes/(main)/(pantheon)/topology';
+import PantheonTopologyLayout from '@/routes/(main)/(pantheon)/topology/_layout';
 // Pages — sync import
 import AgentPage from '@/routes/(main)/agent';
 import DesktopChatLayout from '@/routes/(main)/agent/_layout';
@@ -460,6 +466,29 @@ export const desktopRoutes: RouteObject[] = [
             element: <PantheonSnapshotsLayout />,
             errorElement: <ErrorBoundary resetPath="/pantheon/snapshots" />,
             path: 'snapshots',
+          // Topology (Fabric DAG)
+          {
+            children: [
+              {
+                element: <PantheonTopologyPage />,
+                index: true,
+              },
+            ],
+            element: <PantheonTopologyLayout />,
+            errorElement: <ErrorBoundary resetPath="/pantheon/topology" />,
+            path: 'topology',
+          },
+          // NP (Submissions + Portal + Resources)
+          {
+            children: [
+              {
+                element: <PantheonNPPage />,
+                index: true,
+              },
+            ],
+            element: <PantheonNPLayout />,
+            errorElement: <ErrorBoundary resetPath="/pantheon/np" />,
+            path: 'np',
           },
         ],
         errorElement: <ErrorBoundary resetPath="/" />,

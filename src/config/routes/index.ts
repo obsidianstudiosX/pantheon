@@ -1,11 +1,13 @@
 import { type LucideIcon } from 'lucide-react';
 import {
   BrainCircuit,
+  ClipboardListIcon,
   FilePenIcon,
   Image,
   KanbanSquareIcon,
   LibraryBigIcon,
   SaveIcon,
+  NetworkIcon,
   Settings,
   ShapesIcon,
   Video,
@@ -125,6 +127,22 @@ export const NAVIGATION_ROUTES: NavigationRoute[] = [
     keywords: ['snapshots', 'agent config', 'freeze', 'restore', 'diff', 'pantheon'],
     path: '/pantheon/snapshots',
     pathPrefix: '/pantheon/snapshots',
+    cmdkKey: 'cmdk.pantheonTopology',
+    electronKey: 'navigation.pantheonTopology',
+    icon: NetworkIcon,
+    id: 'pantheon-topology',
+    keywords: ['topology', 'fabric', 'agents', 'graph', 'dag', 'pantheon'],
+    path: '/pantheon/topology',
+    pathPrefix: '/pantheon/topology',
+  },
+  {
+    cmdkKey: 'cmdk.pantheonNP',
+    electronKey: 'navigation.pantheonNP',
+    icon: ClipboardListIcon,
+    id: 'pantheon-np',
+    keywords: ['np', 'nurse', 'submissions', 'portal', 'resources', 'pantheon', 'clinical'],
+    path: '/pantheon/np',
+    pathPrefix: '/pantheon/np',
   },
 ];
 
@@ -148,5 +166,7 @@ export const getNavigableRoutes = (): NavigationRoute[] =>
       'memory',
       'pantheon-kanban',
       'pantheon-snapshots',
+      'pantheon-topology',
+      'pantheon-np',
     ].includes(r.id),
   );

@@ -61,9 +61,9 @@ const getPublishConfig = () => {
   console.info(`📦 ${channelPath} channel: No UPDATE_SERVER_URL, falling back to GitHub provider`);
   return [
     {
-      owner: 'lobehub',
+      owner: 'obsidianstudiosX',
       provider: 'github',
-      repo: 'lobehub',
+      repo: 'pantheon',
     },
   ];
 };
@@ -81,9 +81,9 @@ if (!hasAppleCertificate) {
 
 // 根据版本类型确定协议 scheme
 const getProtocolScheme = () => {
-  if (isCanary) return 'lobehub-canary';
-  if (isNightly) return 'lobehub-nightly';
-  return 'lobehub';
+  if (isCanary) return 'pantheon-canary';
+  if (isNightly) return 'pantheon-nightly';
+  return 'pantheon';
 };
 
 const protocolScheme = getProtocolScheme();
@@ -208,7 +208,8 @@ const config = {
       console.info(`⏭️  Skipping Assets.car (not found or copy failed)`);
     }
   },
-  appId: 'com.lobehub.lobehub-desktop',
+  appId: 'net.obsidian.pantheon',
+  productName: 'Pantheon',
   appImage: {
     artifactName: '${productName}-${version}.${ext}',
   },
@@ -255,7 +256,8 @@ const config = {
   generateUpdatesFilesForAllChannels: true,
   linux: {
     category: 'Utility',
-    maintainer: 'electronjs.org',
+    icon: 'build/icons/icon.png',
+    maintainer: 'obsidianstudiosX',
     target: ['AppImage', 'snap', 'deb', 'rpm', 'tar.gz'],
   },
   mac: {
@@ -265,7 +267,7 @@ const config = {
       CFBundleIconName: 'AppIcon',
       CFBundleURLTypes: [
         {
-          CFBundleURLName: 'LobeHub Protocol',
+          CFBundleURLName: 'Pantheon Protocol',
           CFBundleURLSchemes: [protocolScheme],
         },
       ],
@@ -282,6 +284,7 @@ const config = {
     },
     gatekeeperAssess: false,
     hardenedRuntime: hasAppleCertificate,
+    icon: 'build/icons/icon.icns',
     notarize: hasAppleCertificate,
     ...(hasAppleCertificate ? {} : { identity: null }),
     target: [
@@ -303,7 +306,7 @@ const config = {
   },
   protocols: [
     {
-      name: 'LobeHub Protocol',
+      name: 'Pantheon Protocol',
       schemes: [protocolScheme],
     },
   ],
@@ -322,7 +325,8 @@ const config = {
   ],
 
   win: {
-    executableName: 'LobeHub',
+    executableName: 'Pantheon',
+    icon: 'build/icons/icon.ico',
   },
 };
 

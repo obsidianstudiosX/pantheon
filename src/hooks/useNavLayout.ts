@@ -37,6 +37,13 @@ export const useNavLayout = (): NavLayout => {
   const toggleCommandMenu = useGlobalStore((s) => s.toggleCommandMenu);
   const { showMarket, hideGitHub, pantheonKanbanEnabled, pantheonSnapshotsEnabled } =
     useServerConfigStore(featureFlagsSelectors);
+  const {
+    showMarket,
+    hideGitHub,
+    pantheonKanbanEnabled,
+    pantheonNPEnabled,
+    pantheonTopologyEnabled,
+  } = useServerConfigStore(featureFlagsSelectors);
 
   const topNavItems = useMemo(
     () =>
@@ -101,6 +108,21 @@ export const useNavLayout = (): NavLayout => {
         },
       ] as NavItem[],
     [t, showMarket, pantheonKanbanEnabled, pantheonSnapshotsEnabled],
+          hidden: !pantheonTopologyEnabled,
+          icon: getRouteById('pantheon-topology')!.icon,
+          key: 'pantheon-topology',
+          title: t('tab.pantheonTopology'),
+          url: '/pantheon/topology',
+        },
+        {
+          hidden: !pantheonNPEnabled,
+          icon: getRouteById('pantheon-np')!.icon,
+          key: 'pantheon-np',
+          title: t('tab.pantheonNP'),
+          url: '/pantheon/np',
+        },
+      ] as NavItem[],
+    [t, showMarket, pantheonKanbanEnabled, pantheonNPEnabled, pantheonTopologyEnabled],
   );
 
   const footer = useMemo(

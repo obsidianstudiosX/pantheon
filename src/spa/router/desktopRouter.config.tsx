@@ -563,12 +563,15 @@ export const desktopRoutes: RouteObject[] = [
             path: 'kanban',
           },
           // Snapshots (Agent Config Freeze / Restore / Diff)
+          // Topology (Fabric DAG)
           {
             children: [
               {
                 element: dynamicElement(
                   () => import('@/routes/(main)/(pantheon)/snapshots'),
                   'Desktop > Pantheon > Snapshots',
+                  () => import('@/routes/(main)/(pantheon)/topology'),
+                  'Desktop > Pantheon > Topology',
                 ),
                 index: true,
               },
@@ -579,6 +582,29 @@ export const desktopRoutes: RouteObject[] = [
             ),
             errorElement: <ErrorBoundary resetPath="/pantheon/snapshots" />,
             path: 'snapshots',
+              () => import('@/routes/(main)/(pantheon)/topology/_layout'),
+              'Desktop > Pantheon > Topology > Layout',
+            ),
+            errorElement: <ErrorBoundary resetPath="/pantheon/topology" />,
+            path: 'topology',
+          },
+          // NP (Submissions + Portal + Resources)
+          {
+            children: [
+              {
+                element: dynamicElement(
+                  () => import('@/routes/(main)/(pantheon)/np'),
+                  'Desktop > Pantheon > NP',
+                ),
+                index: true,
+              },
+            ],
+            element: dynamicLayout(
+              () => import('@/routes/(main)/(pantheon)/np/_layout'),
+              'Desktop > Pantheon > NP > Layout',
+            ),
+            errorElement: <ErrorBoundary resetPath="/pantheon/np" />,
+            path: 'np',
           },
         ],
         errorElement: <ErrorBoundary resetPath="/" />,
