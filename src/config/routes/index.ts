@@ -5,6 +5,7 @@ import {
   Image,
   KanbanSquareIcon,
   LibraryBigIcon,
+  SaveIcon,
   Settings,
   ShapesIcon,
   Video,
@@ -116,6 +117,15 @@ export const NAVIGATION_ROUTES: NavigationRoute[] = [
     path: '/pantheon/kanban',
     pathPrefix: '/pantheon/kanban',
   },
+  {
+    cmdkKey: 'cmdk.pantheonSnapshots',
+    electronKey: 'navigation.pantheonSnapshots',
+    icon: SaveIcon,
+    id: 'pantheon-snapshots',
+    keywords: ['snapshots', 'agent config', 'freeze', 'restore', 'diff', 'pantheon'],
+    path: '/pantheon/snapshots',
+    pathPrefix: '/pantheon/snapshots',
+  },
 ];
 
 /**
@@ -137,5 +147,6 @@ export const getNavigableRoutes = (): NavigationRoute[] =>
       'page',
       'memory',
       'pantheon-kanban',
+      'pantheon-snapshots',
     ].includes(r.id),
   );

@@ -17,6 +17,7 @@ export * from './nextauth';
 export * from './notification';
 export * from './oidc';
 export * from './pantheonKanban';
+export * from './pantheonSnapshots';
 export * from './rag';
 export * from './ragEvals';
 export * from './rbac';

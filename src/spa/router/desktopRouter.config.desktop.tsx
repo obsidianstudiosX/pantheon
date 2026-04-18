@@ -59,6 +59,8 @@ import MemoryIdentitiesPage from '@/routes/(main)/memory/identities';
 import MemoryPreferencesPage from '@/routes/(main)/memory/preferences';
 import PantheonKanbanPage from '@/routes/(main)/(pantheon)/kanban';
 import PantheonKanbanLayout from '@/routes/(main)/(pantheon)/kanban/_layout';
+import PantheonSnapshotsPage from '@/routes/(main)/(pantheon)/snapshots';
+import PantheonSnapshotsLayout from '@/routes/(main)/(pantheon)/snapshots/_layout';
 import PageIndexPage from '@/routes/(main)/page';
 import DesktopPageLayout from '@/routes/(main)/page/_layout';
 import PageDetailPage from '@/routes/(main)/page/[id]';
@@ -446,6 +448,18 @@ export const desktopRoutes: RouteObject[] = [
             element: <PantheonKanbanLayout />,
             errorElement: <ErrorBoundary resetPath="/pantheon/kanban" />,
             path: 'kanban',
+          },
+          // Snapshots (Agent Config Freeze / Restore / Diff)
+          {
+            children: [
+              {
+                element: <PantheonSnapshotsPage />,
+                index: true,
+              },
+            ],
+            element: <PantheonSnapshotsLayout />,
+            errorElement: <ErrorBoundary resetPath="/pantheon/snapshots" />,
+            path: 'snapshots',
           },
         ],
         errorElement: <ErrorBoundary resetPath="/" />,

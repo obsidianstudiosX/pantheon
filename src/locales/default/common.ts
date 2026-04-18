@@ -510,6 +510,8 @@ export default {
   'tab.me': 'Me',
   'tab.memory': 'Memory',
   'tab.pages': 'Pages',
+  'tab.pantheonKanban': 'Work Rail',
+  'tab.pantheonSnapshots': 'Agent Snapshots',
   'tab.resource': 'Resources',
   'tab.search': 'Search',
   'tab.setting': 'Settings',
