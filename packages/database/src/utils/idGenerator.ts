@@ -27,6 +27,8 @@ const prefixes = {
   memory: 'mem',
   messageGroups: 'mg',
   messages: 'msg',
+  pantheonChartReviewQueue: 'pcr',
+  pantheonChartReviewResults: 'pcrr',
   pantheonKanbanCards: 'pkc',
   plugins: 'plg',
   sessionGroups: 'sg',

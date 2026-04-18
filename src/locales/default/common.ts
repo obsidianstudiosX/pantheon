@@ -216,6 +216,8 @@ export default {
 
   'cmdk.painting': 'Image',
 
+  'cmdk.pantheonChartReview': 'Open clinical chart review',
+
   'cmdk.resource': 'Resources',
 
   'cmdk.search.agent': 'Agent',
@@ -510,6 +512,7 @@ export default {
   'tab.me': 'Me',
   'tab.memory': 'Memory',
   'tab.pages': 'Pages',
+  'tab.pantheonChartReview': 'Chart Review',
   'tab.resource': 'Resources',
   'tab.search': 'Search',
   'tab.setting': 'Settings',

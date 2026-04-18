@@ -35,8 +35,12 @@ export interface NavLayout {
 export const useNavLayout = (): NavLayout => {
   const { t } = useTranslation('common');
   const toggleCommandMenu = useGlobalStore((s) => s.toggleCommandMenu);
-  const { showMarket, hideGitHub, pantheonKanbanEnabled } =
-    useServerConfigStore(featureFlagsSelectors);
+  const {
+    showMarket,
+    hideGitHub,
+    pantheonKanbanEnabled,
+    pantheonClinicalChartReviewEnabled,
+  } = useServerConfigStore(featureFlagsSelectors);
 
   const topNavItems = useMemo(
     () =>
@@ -92,8 +96,15 @@ export const useNavLayout = (): NavLayout => {
           title: t('tab.pantheonKanban'),
           url: '/pantheon/kanban',
         },
+        {
+          hidden: !pantheonClinicalChartReviewEnabled,
+          icon: getRouteById('pantheon-chart-review')!.icon,
+          key: 'pantheon-chart-review',
+          title: t('tab.pantheonChartReview'),
+          url: '/pantheon/clinical/chart-review',
+        },
       ] as NavItem[],
-    [t, showMarket, pantheonKanbanEnabled],
+    [t, showMarket, pantheonKanbanEnabled, pantheonClinicalChartReviewEnabled],
   );
 
   const footer = useMemo(

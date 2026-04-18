@@ -7,6 +7,7 @@ import {
   LibraryBigIcon,
   Settings,
   ShapesIcon,
+  StethoscopeIcon,
   Video,
 } from 'lucide-react';
 
@@ -116,6 +117,15 @@ export const NAVIGATION_ROUTES: NavigationRoute[] = [
     path: '/pantheon/kanban',
     pathPrefix: '/pantheon/kanban',
   },
+  {
+    cmdkKey: 'cmdk.pantheonChartReview',
+    electronKey: 'navigation.pantheonChartReview',
+    icon: StethoscopeIcon,
+    id: 'pantheon-chart-review',
+    keywords: ['chart', 'review', 'phi', 'clinical', 'teresse', 'pantheon'],
+    path: '/pantheon/clinical/chart-review',
+    pathPrefix: '/pantheon/clinical/chart-review',
+  },
 ];
 
 /**
@@ -137,5 +147,6 @@ export const getNavigableRoutes = (): NavigationRoute[] =>
       'page',
       'memory',
       'pantheon-kanban',
+      'pantheon-chart-review',
     ].includes(r.id),
   );
