@@ -16,6 +16,7 @@ export * from './message';
 export * from './nextauth';
 export * from './notification';
 export * from './oidc';
+export * from './pantheonChartReview';
 export * from './pantheonKanban';
 export * from './pantheonSnapshots';
 export * from './pantheonNp';

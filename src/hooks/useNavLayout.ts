@@ -43,6 +43,7 @@ export const useNavLayout = (): NavLayout => {
     pantheonKanbanEnabled,
     pantheonNPEnabled,
     pantheonTopologyEnabled,
+    pantheonClinicalChartReviewEnabled,
   } = useServerConfigStore(featureFlagsSelectors);
 
   const topNavItems = useMemo(
@@ -123,6 +124,14 @@ export const useNavLayout = (): NavLayout => {
         },
       ] as NavItem[],
     [t, showMarket, pantheonKanbanEnabled, pantheonNPEnabled, pantheonTopologyEnabled],
+          hidden: !pantheonClinicalChartReviewEnabled,
+          icon: getRouteById('pantheon-chart-review')!.icon,
+          key: 'pantheon-chart-review',
+          title: t('tab.pantheonChartReview'),
+          url: '/pantheon/clinical/chart-review',
+        },
+      ] as NavItem[],
+    [t, showMarket, pantheonKanbanEnabled, pantheonClinicalChartReviewEnabled],
   );
 
   const footer = useMemo(

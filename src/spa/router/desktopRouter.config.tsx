@@ -605,6 +605,35 @@ export const desktopRoutes: RouteObject[] = [
             ),
             errorElement: <ErrorBoundary resetPath="/pantheon/np" />,
             path: 'np',
+          // Clinical zone — currently only the chart-review PHI-gated route.
+          {
+            children: [
+              {
+                children: [
+                  {
+                    element: dynamicElement(
+                      () =>
+                        import('@/routes/(main)/(pantheon)/clinical/chart-review'),
+                      'Desktop > Pantheon > Clinical > ChartReview',
+                    ),
+                    index: true,
+                  },
+                ],
+                element: dynamicLayout(
+                  () =>
+                    import(
+                      '@/routes/(main)/(pantheon)/clinical/chart-review/_layout'
+                    ),
+                  'Desktop > Pantheon > Clinical > ChartReview > Layout',
+                ),
+                errorElement: (
+                  <ErrorBoundary resetPath="/pantheon/clinical/chart-review" />
+                ),
+                path: 'chart-review',
+              },
+            ],
+            errorElement: <ErrorBoundary resetPath="/pantheon/clinical/chart-review" />,
+            path: 'clinical',
           },
         ],
         errorElement: <ErrorBoundary resetPath="/" />,

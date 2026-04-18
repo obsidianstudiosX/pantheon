@@ -221,6 +221,7 @@ export default {
   'cmdk.pantheonNP': 'Open NP zone',
 
   'cmdk.pantheonTopology': 'Open Pantheon fabric topology',
+  'cmdk.pantheonChartReview': 'Open clinical chart review',
 
   'cmdk.resource': 'Resources',
 
@@ -520,6 +521,7 @@ export default {
   'tab.pantheonSnapshots': 'Agent Snapshots',
   'tab.pantheonNP': 'NP Zone',
   'tab.pantheonTopology': 'Fabric',
+  'tab.pantheonChartReview': 'Chart Review',
   'tab.resource': 'Resources',
   'tab.search': 'Search',
   'tab.setting': 'Settings',

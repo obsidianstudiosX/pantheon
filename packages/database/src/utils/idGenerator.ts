@@ -28,6 +28,8 @@ const prefixes = {
   messageGroups: 'mg',
   messages: 'msg',
   pantheonAgentSnapshots: 'psn',
+  pantheonChartReviewQueue: 'pcr',
+  pantheonChartReviewResults: 'pcrr',
   pantheonKanbanCards: 'pkc',
   pantheonNpResources: 'pnr',
   pantheonNpSubmissions: 'pns',

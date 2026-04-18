@@ -1,9 +1,11 @@
 import { router } from '@/libs/trpc/lambda';
 
+import { chartReviewRouter } from './chart-review';
 import { kanbanRouter } from './kanban';
 import { snapshotsRouter } from './snapshots';
 
 export const pantheonRouter = router({
+  chartReview: chartReviewRouter,
   kanban: kanbanRouter,
   snapshots: snapshotsRouter,
 import { npRouter } from './np';

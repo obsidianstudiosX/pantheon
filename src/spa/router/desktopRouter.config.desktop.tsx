@@ -63,6 +63,8 @@ import MemoryContextsPage from '@/routes/(main)/memory/contexts';
 import MemoryExperiencesPage from '@/routes/(main)/memory/experiences';
 import MemoryIdentitiesPage from '@/routes/(main)/memory/identities';
 import MemoryPreferencesPage from '@/routes/(main)/memory/preferences';
+import PantheonChartReviewPage from '@/routes/(main)/(pantheon)/clinical/chart-review';
+import PantheonChartReviewLayout from '@/routes/(main)/(pantheon)/clinical/chart-review/_layout';
 import PantheonKanbanPage from '@/routes/(main)/(pantheon)/kanban';
 import PantheonKanbanLayout from '@/routes/(main)/(pantheon)/kanban/_layout';
 import PantheonSnapshotsPage from '@/routes/(main)/(pantheon)/snapshots';
@@ -489,6 +491,25 @@ export const desktopRoutes: RouteObject[] = [
             element: <PantheonNPLayout />,
             errorElement: <ErrorBoundary resetPath="/pantheon/np" />,
             path: 'np',
+          // Clinical zone — currently only the chart-review PHI-gated route.
+          {
+            children: [
+              {
+                children: [
+                  {
+                    element: <PantheonChartReviewPage />,
+                    index: true,
+                  },
+                ],
+                element: <PantheonChartReviewLayout />,
+                errorElement: (
+                  <ErrorBoundary resetPath="/pantheon/clinical/chart-review" />
+                ),
+                path: 'chart-review',
+              },
+            ],
+            errorElement: <ErrorBoundary resetPath="/pantheon/clinical/chart-review" />,
+            path: 'clinical',
           },
         ],
         errorElement: <ErrorBoundary resetPath="/" />,

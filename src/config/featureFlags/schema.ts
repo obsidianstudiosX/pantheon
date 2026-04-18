@@ -38,6 +38,7 @@ export const FeatureFlagsSchema = z.object({
   pantheon_zone_snapshots_enabled: FeatureFlagValue.optional(),
   pantheon_zone_np_enabled: FeatureFlagValue.optional(),
   pantheon_zone_topology_enabled: FeatureFlagValue.optional(),
+  pantheon_zone_clinical_chart_review_enabled: FeatureFlagValue.optional(),
 
   // the flags below can only be used with commercial license
   // if you want to use it in the commercial usage
@@ -90,6 +91,9 @@ export const DEFAULT_FEATURE_FLAGS: IFeatureFlags = {
   pantheon_zone_snapshots_enabled: true,
   pantheon_zone_np_enabled: true,
   pantheon_zone_topology_enabled: true,
+  // Clinical chart-review is gated OFF by default until operator validates
+  // the PHI pipeline end-to-end — this touches real patient workflows.
+  pantheon_zone_clinical_chart_review_enabled: false,
 
   market: true,
   speech_to_text: true,
@@ -134,6 +138,10 @@ export const mapFeatureFlagsEnvToState = (config: IFeatureFlags, userId?: string
     ),
     pantheonNPEnabled: evaluateFeatureFlag(config.pantheon_zone_np_enabled, userId),
     pantheonTopologyEnabled: evaluateFeatureFlag(config.pantheon_zone_topology_enabled, userId),
+    pantheonClinicalChartReviewEnabled: evaluateFeatureFlag(
+      config.pantheon_zone_clinical_chart_review_enabled,
+      userId,
+    ),
 
     hideGitHub: evaluateFeatureFlag(config.commercial_hide_github, userId),
     hideDocs: evaluateFeatureFlag(config.commercial_hide_docs, userId),

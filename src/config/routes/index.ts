@@ -10,6 +10,7 @@ import {
   NetworkIcon,
   Settings,
   ShapesIcon,
+  StethoscopeIcon,
   Video,
 } from 'lucide-react';
 
@@ -143,6 +144,13 @@ export const NAVIGATION_ROUTES: NavigationRoute[] = [
     keywords: ['np', 'nurse', 'submissions', 'portal', 'resources', 'pantheon', 'clinical'],
     path: '/pantheon/np',
     pathPrefix: '/pantheon/np',
+    cmdkKey: 'cmdk.pantheonChartReview',
+    electronKey: 'navigation.pantheonChartReview',
+    icon: StethoscopeIcon,
+    id: 'pantheon-chart-review',
+    keywords: ['chart', 'review', 'phi', 'clinical', 'teresse', 'pantheon'],
+    path: '/pantheon/clinical/chart-review',
+    pathPrefix: '/pantheon/clinical/chart-review',
   },
 ];
 
@@ -168,5 +176,6 @@ export const getNavigableRoutes = (): NavigationRoute[] =>
       'pantheon-snapshots',
       'pantheon-topology',
       'pantheon-np',
+      'pantheon-chart-review',
     ].includes(r.id),
   );

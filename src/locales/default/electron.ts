@@ -23,6 +23,7 @@ export default {
   'navigation.pantheonKanban': 'Work Rail',
   'navigation.pantheonNP': 'NP Zone',
   'navigation.pantheonTopology': 'Fabric',
+  'navigation.pantheonChartReview': 'Chart Review',
   'navigation.pin': 'Pin',
   'navigation.pinned': 'Pinned',
   'navigation.provider': 'Provider',
