@@ -466,6 +466,7 @@ export const desktopRoutes: RouteObject[] = [
             element: <PantheonSnapshotsLayout />,
             errorElement: <ErrorBoundary resetPath="/pantheon/snapshots" />,
             path: 'snapshots',
+          },
           // Topology (Fabric DAG)
           {
             children: [
@@ -489,6 +490,7 @@ export const desktopRoutes: RouteObject[] = [
             element: <PantheonNPLayout />,
             errorElement: <ErrorBoundary resetPath="/pantheon/np" />,
             path: 'np',
+          },
           // Clinical zone — currently only the chart-review PHI-gated route.
           {
             children: [
