@@ -42,6 +42,10 @@ export const config = {
     '/oauth(.*)',
     '/oidc(.*)',
     '/market-auth-callback(.*)',
+
+    // Pantheon fork routes
+    '/pantheon',
+    '/pantheon(.*)',
   ],
 };
 
