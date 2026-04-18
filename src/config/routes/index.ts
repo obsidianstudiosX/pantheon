@@ -5,6 +5,7 @@ import {
   Image,
   KanbanSquareIcon,
   LibraryBigIcon,
+  NetworkIcon,
   Settings,
   ShapesIcon,
   Video,
@@ -116,6 +117,15 @@ export const NAVIGATION_ROUTES: NavigationRoute[] = [
     path: '/pantheon/kanban',
     pathPrefix: '/pantheon/kanban',
   },
+  {
+    cmdkKey: 'cmdk.pantheonTopology',
+    electronKey: 'navigation.pantheonTopology',
+    icon: NetworkIcon,
+    id: 'pantheon-topology',
+    keywords: ['topology', 'fabric', 'agents', 'graph', 'dag', 'pantheon'],
+    path: '/pantheon/topology',
+    pathPrefix: '/pantheon/topology',
+  },
 ];
 
 /**
@@ -137,5 +147,6 @@ export const getNavigableRoutes = (): NavigationRoute[] =>
       'page',
       'memory',
       'pantheon-kanban',
+      'pantheon-topology',
     ].includes(r.id),
   );

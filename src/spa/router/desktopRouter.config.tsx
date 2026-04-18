@@ -562,6 +562,24 @@ export const desktopRoutes: RouteObject[] = [
             errorElement: <ErrorBoundary resetPath="/pantheon/kanban" />,
             path: 'kanban',
           },
+          // Topology (Fabric DAG)
+          {
+            children: [
+              {
+                element: dynamicElement(
+                  () => import('@/routes/(main)/(pantheon)/topology'),
+                  'Desktop > Pantheon > Topology',
+                ),
+                index: true,
+              },
+            ],
+            element: dynamicLayout(
+              () => import('@/routes/(main)/(pantheon)/topology/_layout'),
+              'Desktop > Pantheon > Topology > Layout',
+            ),
+            errorElement: <ErrorBoundary resetPath="/pantheon/topology" />,
+            path: 'topology',
+          },
         ],
         errorElement: <ErrorBoundary resetPath="/" />,
         path: 'pantheon',

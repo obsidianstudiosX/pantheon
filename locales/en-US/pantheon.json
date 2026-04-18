@@ -22,5 +22,17 @@
   "kanban.pageDescription": "Operator-facing kanban board for planning Pantheon work.",
   "kanban.pageTitle": "Work Rail",
   "kanban.rowActions.delete": "Delete",
-  "kanban.rowActions.edit": "Edit"
+  "kanban.rowActions.edit": "Edit",
+  "topology.drawer.agency": "Agency",
+  "topology.drawer.agentId": "Agent ID",
+  "topology.drawer.noSelection": "Click an agent node to inspect it.",
+  "topology.drawer.phiAware": "PHI-aware",
+  "topology.drawer.port": "Port",
+  "topology.drawer.role": "Role",
+  "topology.drawer.title": "Agent detail",
+  "topology.drawer.verifyRequired": "Verify required",
+  "topology.error": "Something went wrong loading the Pantheon fabric.",
+  "topology.featureDisabled": "The topology view is currently disabled. Enable it via the pantheon_zone_topology_enabled feature flag.",
+  "topology.pageDescription": "Read-only fabric of the 26-agent Pantheon (dotted edges = verification mesh).",
+  "topology.pageTitle": "Pantheon Fabric"
 }

@@ -20,6 +20,8 @@ export default {
   'navigation.onboarding': 'Onboarding',
   'navigation.page': 'Page',
   'navigation.pages': 'Pages',
+  'navigation.pantheonKanban': 'Work Rail',
+  'navigation.pantheonTopology': 'Fabric',
   'navigation.pin': 'Pin',
   'navigation.pinned': 'Pinned',
   'navigation.provider': 'Provider',

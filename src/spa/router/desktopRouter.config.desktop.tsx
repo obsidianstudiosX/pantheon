@@ -59,6 +59,8 @@ import MemoryIdentitiesPage from '@/routes/(main)/memory/identities';
 import MemoryPreferencesPage from '@/routes/(main)/memory/preferences';
 import PantheonKanbanPage from '@/routes/(main)/(pantheon)/kanban';
 import PantheonKanbanLayout from '@/routes/(main)/(pantheon)/kanban/_layout';
+import PantheonTopologyPage from '@/routes/(main)/(pantheon)/topology';
+import PantheonTopologyLayout from '@/routes/(main)/(pantheon)/topology/_layout';
 import PageIndexPage from '@/routes/(main)/page';
 import DesktopPageLayout from '@/routes/(main)/page/_layout';
 import PageDetailPage from '@/routes/(main)/page/[id]';
@@ -446,6 +448,18 @@ export const desktopRoutes: RouteObject[] = [
             element: <PantheonKanbanLayout />,
             errorElement: <ErrorBoundary resetPath="/pantheon/kanban" />,
             path: 'kanban',
+          },
+          // Topology (Fabric DAG)
+          {
+            children: [
+              {
+                element: <PantheonTopologyPage />,
+                index: true,
+              },
+            ],
+            element: <PantheonTopologyLayout />,
+            errorElement: <ErrorBoundary resetPath="/pantheon/topology" />,
+            path: 'topology',
           },
         ],
         errorElement: <ErrorBoundary resetPath="/" />,

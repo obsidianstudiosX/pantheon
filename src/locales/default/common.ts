@@ -216,6 +216,10 @@ export default {
 
   'cmdk.painting': 'Image',
 
+  'cmdk.pantheonKanban': 'Open Work Rail kanban',
+
+  'cmdk.pantheonTopology': 'Open Pantheon fabric topology',
+
   'cmdk.resource': 'Resources',
 
   'cmdk.search.agent': 'Agent',
@@ -510,6 +514,8 @@ export default {
   'tab.me': 'Me',
   'tab.memory': 'Memory',
   'tab.pages': 'Pages',
+  'tab.pantheonKanban': 'Work Rail',
+  'tab.pantheonTopology': 'Fabric',
   'tab.resource': 'Resources',
   'tab.search': 'Search',
   'tab.setting': 'Settings',
