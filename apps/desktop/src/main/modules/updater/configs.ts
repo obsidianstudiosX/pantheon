@@ -24,5 +24,10 @@ export const updaterConfig = {
     autoDownloadUpdate: true,
     checkUpdateInterval: 60 * 60 * 1000, // 1 hour
   },
-  enableAppUpdate: !isDev,
+  // Pantheon fork: auto-updater is permanently disabled. The upstream
+  // default points at lobehub.com / the lobe-chat GitHub releases, and
+  // accepting an update would overwrite the rebrand + custom routes.
+  // Updates to the Pantheon desktop app are distributed manually by
+  // rebuilding the Electron binary from this fork and sharing it.
+  enableAppUpdate: false,
 };
