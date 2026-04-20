@@ -4,6 +4,7 @@ import { memo } from 'react';
 import { useAgentStore } from '@/store/agent';
 import { agentSelectors } from '@/store/agent/selectors';
 import { ChatSettingsTabs } from '@/store/global/initialState';
+import PantheonSlots from '@/ui-extensions/PantheonSlots';
 
 import AgentChat from './AgentChat';
 import AgentDocuments from './AgentDocuments';
@@ -23,7 +24,12 @@ const AgentSettingsContent = memo<AgentSettingsContentProps>(({ tab, loadingSkel
 
   return (
     <>
-      {tab === ChatSettingsTabs.Meta && <AgentMeta />}
+      {tab === ChatSettingsTabs.Meta && (
+        <>
+          <AgentMeta />
+          <PantheonSlots slotId="agentEdit" />
+        </>
+      )}
       {tab === ChatSettingsTabs.Documents && <AgentDocuments />}
       {tab === ChatSettingsTabs.Opening && <AgentOpening />}
       {tab === ChatSettingsTabs.Chat && <AgentChat />}
