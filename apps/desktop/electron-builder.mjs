@@ -210,6 +210,13 @@ const config = {
   },
   appId: 'net.obsidian.pantheon',
   productName: 'Pantheon',
+  // Pantheon thin-client default: bake remote URL into installer env so
+  // the desktop app opens the Docker backend (with PHI pipeline) by default.
+  extraMetadata: {
+    env: {
+      PANTHEON_REMOTE_URL: 'http://localhost:3210',
+    },
+  },
   appImage: {
     artifactName: '${productName}-${version}.${ext}',
   },

@@ -35,9 +35,22 @@ export class RendererUrlManager {
   }
 
   /**
-   * Configure renderer loading strategy for dev/prod
+   * Configure renderer loading strategy for dev/prod.
+   *
+   * Pantheon thin-client mode: if PANTHEON_REMOTE_URL is set, Electron
+   * bypasses the bundled SPA and loads the remote URL directly. This is
+   * how the Pantheon desktop app talks to the Docker backend with the
+   * PHI pipeline active, matching PWA/web behavior.
    */
   configureRendererLoader() {
+    // Pantheon thin-client branch — checked FIRST, before dev/prod paths.
+    const pantheonRemote = process.env['PANTHEON_REMOTE_URL'];
+    if (pantheonRemote) {
+      logger.info(`[Pantheon] thin-client mode: loading remote ${pantheonRemote}`);
+      this.rendererLoadedUrl = pantheonRemote;
+      return;
+    }
+
     const electronRendererUrl = process.env['ELECTRON_RENDERER_URL'];
 
     if (isDev && !this.rendererStaticOverride && electronRendererUrl) {
