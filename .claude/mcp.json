@@ -1,0 +1,17 @@
+{
+  "$schema": "https://claude.ai/schemas/mcp.json",
+  "description": "Foundation sub-project MCP server configuration — 2 servers wired now (github, context7); firecrawl and gemini assumed via plugin system; chrome-devtools, playwright, sentry deferred",
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      }
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    }
+  }
+}

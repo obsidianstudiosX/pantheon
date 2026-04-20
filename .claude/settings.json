@@ -1,0 +1,75 @@
+{
+  "$schema": "https://claude.ai/schemas/settings.json",
+  "description": "Pantheon fork harness — hooks + permissions enforcing Foundation sub-project rules",
+  "permissions": {
+    "allow": [
+      "Bash(pnpm exec tsc:*)",
+      "Bash(pnpm vitest:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm install:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker logs:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh api:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Check the pending Bash command. If it contains any of `git push --force`, `git reset --hard`, `git branch -D`, `rm -rf /opt`, or attempts to write to `/home/admin-linux/sandbox/valeria-standalone/` or `systemd/valeria-sandbox.service`, REFUSE and tell the operator why. Otherwise approve."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "If the file just edited has extension .ts or .tsx, remind Claude to run `pnpm exec tsc --noEmit --skipLibCheck` on the changed file's package. Otherwise, no action."
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "At session start: (1) read ~/.claude/projects/--wsl-localhost-Ubuntu-opt-obsidian-pantheon/memory/MEMORY.md if it exists, (2) list the 3 most recent files in /opt/pantheon/src/docs/retros/ if the directory exists, (3) summarize active tasks. Keep under 200 words."
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Before context compaction: (1) note current git branch and any uncommitted changes via `git status --short`, (2) list active tasks from TaskList, (3) summarize key decisions from this session in 3-5 bullets. This summary survives compaction."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "If this session made 5+ tool calls or touched 3+ files, draft a one-paragraph auto-retro summarizing: what was done, what surprised you, what the next session should check first. Offer to save it to /opt/pantheon/src/docs/retros/YYYY-MM-DD-{topic-slug}.md via the `remember` skill. Don't save unless operator confirms."
+          }
+        ]
+      }
+    ]
+  }
+}
