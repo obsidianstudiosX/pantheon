@@ -63,8 +63,24 @@ export default defineConfig({
     },
 
     VitePWA({
-      injectRegister: null,
-      manifest: false,
+      injectRegister: 'auto',
+      manifest: {
+        name: 'Pantheon',
+        short_name: 'Pantheon',
+        description: 'Pantheon clinical workspace — agent teammates that grow with you.',
+        theme_color: '#1d2333',
+        background_color: '#0f1420',
+        display: 'standalone',
+        icons: [
+          { src: '/apps/desktop/build/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+          {
+            src: '/apps/desktop/build/icons/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable',
+          },
+        ],
+      },
       registerType: 'prompt',
       workbox: {
         globPatterns: ['**/*.{js,css,html,woff2}'],
