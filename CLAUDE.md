@@ -1,123 +1,71 @@
-# CLAUDE.md
+# Pantheon Fork — LobeHub Codebase Rules
 
-Guidelines for using Claude Code in this LobeHub repository.
+You are Claude Code working on the Pantheon fork of LobeHub (`obsidianstudiosX/pantheon`, branch `pantheon-main`). This file is loaded every session. Follow these rules.
 
-## Tech Stack
+## Stack
 
-- Next.js 16 + React 19 + TypeScript
-- SPA inside Next.js with `react-router-dom`
-- `@lobehub/ui`, antd for components; antd-style for CSS-in-JS — **prefer `createStaticStyles` with `cssVar.*`** (zero-runtime); only fall back to `createStyles` + `token` when styles genuinely need runtime computation. See `.cursor/docs/createStaticStyles_migration_guide.md`.
-- react-i18next for i18n; zustand for state management
-- SWR for data fetching; TRPC for type-safe backend
-- Drizzle ORM with PostgreSQL; Vitest for testing
+- Next.js 16 (App Router; `proxy.ts` not `middleware.ts`)
+- React 19.2, TypeScript 5.x, pnpm workspace
+- Drizzle ORM against ParadeDB (postgres:17 + pgvector + pg_search + pg_ivm)
+- Better Auth (replaces NextAuth in LobeHub v2)
+- Vite for SPA renderer, Electron for desktop, electron-builder for packaging
+- Docker Compose stack: pantheon-app, pantheon-postgres, pantheon-redis, pantheon-minio
 
-## Project Structure
+## Ownership Matrix
 
-```plaintext
-lobehub/
-├── apps/desktop/           # Electron desktop app
-├── packages/               # Shared packages (@lobechat/*)
-│   ├── database/           # Database schemas, models, repositories
-│   ├── agent-runtime/      # Agent runtime
-│   └── ...
-├── src/
-│   ├── app/                # Next.js App Router (backend API + auth)
-│   │   ├── (backend)/     # API routes (trpc, webapi, etc.)
-│   │   ├── spa/            # SPA HTML template service
-│   │   └── [variants]/(auth)/  # Auth pages (SSR required)
-│   ├── routes/             # SPA page components (Vite)
-│   │   ├── (main)/         # Desktop pages
-│   │   ├── (mobile)/       # Mobile pages
-│   │   ├── (desktop)/      # Desktop-specific pages
-│   │   ├── onboarding/     # Onboarding pages
-│   │   └── share/          # Share pages
-│   ├── spa/                # SPA entry points and router config
-│   │   ├── entry.web.tsx   # Web entry
-│   │   ├── entry.mobile.tsx
-│   │   ├── entry.desktop.tsx
-│   │   └── router/         # React Router configuration
-│   ├── store/              # Zustand stores
-│   ├── services/           # Client services
-│   ├── server/             # Server services and routers
-│   └── ...
-└── e2e/                    # E2E tests (Cucumber + Playwright)
-```
+| Path                                                   | Owner                   | Edit rule                      |
+| ------------------------------------------------------ | ----------------------- | ------------------------------ |
+| `src/server/pantheon/**`                               | Clinical (PHI pipeline) | OPERATOR APPROVAL REQUIRED     |
+| `src/business/server/pantheon-*`                       | Clinical (wiring)       | OPERATOR APPROVAL REQUIRED     |
+| `src/business/server/streaming-credential-redactor.ts` | Clinical                | OPERATOR APPROVAL REQUIRED     |
+| `packages/database/migrations/*pantheon*`              | Schema                  | OPERATOR APPROVAL REQUIRED     |
+| `packages/database/src/models/pantheon/**`             | Schema                  | OPERATOR APPROVAL REQUIRED     |
+| `.env*`, `Dockerfile`, `docker-compose.yml`            | Infra                   | OPERATOR APPROVAL REQUIRED     |
+| `src/config/routes/**`                                 | Rebrand-sensitive       | OPERATOR APPROVAL REQUIRED     |
+| `src/hooks/useNavLayout.ts`                            | Rebrand-sensitive       | OPERATOR APPROVAL REQUIRED     |
+| `packages/business/const/src/branding.ts`              | Rebrand                 | OPERATOR APPROVAL REQUIRED     |
+| `apps/desktop/src/main/modules/updater/configs.ts`     | Fork-specific           | OPERATOR APPROVAL REQUIRED     |
+| Everything else                                        | Open                    | Follow TDD + line limits below |
 
-## SPA Routes and Features
+## Hard Rules (non-negotiable)
 
-SPA-related code is grouped under `src/spa/` (entries + router) and `src/routes/` (page segments). We use a **roots vs features** split: route trees only hold page segments; business logic and UI live in features.
+1. **TSC after every TypeScript edit.** Run `pnpm exec tsc --noEmit --skipLibCheck` on the file's package scope. Show output in response. No silent assumptions.
+2. **Max 50 lines per bugfix.** If a fix exceeds 50 lines, split into multiple atomic commits. If you CAN'T split, escalate to operator.
+3. **One fix per commit.** Atomic history. No "misc cleanup + feature + test" commits.
+4. **Verification before completion.** Use the `superpowers:verification-before-completion` skill. Never claim "done" without running the verify command and showing its output in your reply.
+5. **No destructive git.** `push --force`, `reset --hard`, `branch -D` against `pantheon-main` or `canary` require explicit operator approval. `--no-verify` for pre-commit hooks requires explicit operator approval (per-invocation, not session-wide).
+6. **Clinical-path edits require operator approval.** See ownership matrix above.
+7. **Never skip `pnpm install` after pulling.** Workspace package links break silently otherwise.
 
-- **`src/spa/`** – SPA entry points (`entry.web.tsx`, `entry.mobile.tsx`, `entry.desktop.tsx`) and React Router config (`router/`). Keeps router config next to entries to avoid confusion with `src/routes/`.
-
-- **`src/routes/` (roots)**\
-  Only page-segment files: `_layout/index.tsx`, `index.tsx` (or `page.tsx`), and dynamic segments like `[id]/index.tsx`. Keep these **thin**: they should only import from `@/features/*` and compose layout/page, with no business logic or heavy UI.
-
-- **`src/features/`**\
-  Business components by **domain** (e.g. `Pages`, `PageEditor`, `Home`). Put layout chunks (sidebar, header, body), hooks, and domain-specific UI here. Each feature exposes an `index.ts` (or `index.tsx`) with clear exports.
-
-When adding or changing SPA routes:
-
-1. In `src/routes/`, add only the route segment files (layout + page) that delegate to features.
-2. Implement layout and page content under `src/features/<Domain>/` and export from there.
-3. In route files, use `import { X } from '@/features/<Domain>'` (or `import Y from '@/features/<Domain>/...'`). Do not add new `features/` folders inside `src/routes/`.
-4. **Register the desktop route tree in both configs:** `src/spa/router/desktopRouter.config.tsx` and `src/spa/router/desktopRouter.config.desktop.tsx` must stay in sync (same paths and nesting). Updating only one can cause **blank screens** if the other build path expects the route.
-
-See the **spa-routes** skill (`.agents/skills/spa-routes/SKILL.md`) for the full convention and file-division rules.
-
-## Development
-
-### Starting the Dev Environment
+## Verify commands (run after any change before declaring done)
 
 ```bash
-# SPA dev mode (frontend only, proxies API to localhost:3010)
-bun run dev:spa
+# Typecheck (fast)
+pnpm exec tsc --noEmit --skipLibCheck 2>&1 | grep "error TS" | wc -l
+# Expected: 0
 
-# Full-stack dev (Next.js + Vite SPA concurrently)
-bun run dev
+# Pantheon-specific tests
+pnpm vitest run src/server/pantheon/hooks/__tests__/ src/business/server/__tests__/ --reporter=dot
+# Expected: 121 passed (121)
+
+# PHI fixture gate (pre-existing baseline)
+pnpm vitest run src/server/pantheon/hooks/__tests__/fixtures.test.ts --reporter=dot
+# Expected: all fixtures green
 ```
 
-After `dev:spa` starts, the terminal prints a **Debug Proxy** URL:
+## When in doubt, delegate
 
-```plaintext
-Debug Proxy: https://app.lobehub.com/_dangerous_local_dev_proxy?debug-host=http%3A%2F%2Flocalhost%3A9876
-```
+- 3+ grep queries in a session → dispatch `Explore` subagent
+- Bug investigation → invoke `superpowers:systematic-debugging`
+- New feature → invoke `superpowers:test-driven-development`
+- Track-parallel work → invoke `superpowers:using-git-worktrees`
 
-Open this URL to develop locally against the production backend (app.lobehub.com). The proxy page loads your local Vite dev server's SPA into the online environment, enabling HMR with real server config.
+## Auto-retro on non-trivial sessions
 
-### Git Workflow
+At session end, if ≥5 tool calls or ≥3 files touched, invoke `remember` skill to write `docs/retros/YYYY-MM-DD-{topic}.md`. Next session's SessionStart hook loads the latest retro.
 
-- **Branch strategy**: `canary` is the development branch (cloud production); `main` is the release branch (periodically cherry-picks from canary)
-- New branches should be created from `canary`; PRs should target `canary`
-- Use rebase for `git pull`
-- Commit messages: prefix with gitmoji
-- Branch format: `<type>/<feature-name>`
+## References
 
-### Package Management
-
-- `pnpm` for dependency management
-- `bun` to run npm scripts
-- `bunx` for executable npm packages
-
-### Testing
-
-```bash
-# Run specific test (NEVER run `bun run test` - takes ~10 minutes)
-bunx vitest run --silent='passed-only' '[file-path]'
-
-# Database package
-cd packages/database && bunx vitest run --silent='passed-only' '[file]'
-```
-
-- Prefer `vi.spyOn` over `vi.mock`
-- Tests must pass type check: `bun run type-check`
-- After 2 failed fix attempts, stop and ask for help
-
-### i18n
-
-- Add keys to `src/locales/default/namespace.ts`
-- For dev preview: translate `locales/zh-CN/` and `locales/en-US/`
-- Don't run `pnpm i18n` - CI handles it
-
-## Skills (Auto-loaded by Claude)
-
-Claude Code automatically loads relevant skills from `.agents/skills/`.
+- Master plan: `/opt/obsidian-pantheon/HANDOFF/UNIFIED-PLAN-2026-04-20.md`
+- Pantheon home: `/opt/obsidian-pantheon/`
+- Canon registry: `/mnt/c/Users/admin/Downloads/PANTHEON-HANDOFF/RECONCILED-REGISTRY.md`
