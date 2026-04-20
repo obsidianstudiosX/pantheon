@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Warn if any staged file isn't covered in the overlay catalog.
+# This hook is OPT-IN. Enable by running: git config core.hooksPath .githooks
+# (The active hook chain is husky under .husky/_; this sits alongside as a
+#  lightweight alternative for operators who want overlay-coverage warnings
+#  without the full husky chain.)
+#
+# Non-blocking: warns only; exit 0 always. Skip with --no-verify if needed
+# (per /opt/pantheon/src/CLAUDE.md rule 5, --no-verify needs operator approval).
+
+CATALOG=/opt/obsidian-pantheon/overlay/lobehub/README.md
+CHANGED=$(git diff --cached --name-only)
+MISSING=""
+for f in $CHANGED; do
+  if ! grep -qF "\`$f\`" "$CATALOG" 2>/dev/null; then
+    # Also allow a match by parent directory (catalog groups often list a
+    # directory glob like `src/server/pantheon/hooks/**`).
+    parent=$(dirname "$f")
+    if ! grep -qF "\`$parent/" "$CATALOG" 2>/dev/null; then
+      MISSING="$MISSING $f"
+    fi
+  fi
+done
+if [ -n "$MISSING" ]; then
+  echo "WARN: the following files are not covered by overlay/lobehub/README.md catalog:"
+  for f in $MISSING; do echo "  - $f"; done
+  echo ""
+  echo "Consider adding catalog entries before committing (or skip with --no-verify)."
+  echo "Catalog: $CATALOG"
+fi
+exit 0

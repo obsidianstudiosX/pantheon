@@ -36,6 +36,9 @@ You are Claude Code working on the Pantheon fork of LobeHub (`obsidianstudiosX/p
 5. **No destructive git.** `push --force`, `reset --hard`, `branch -D` against `pantheon-main` or `canary` require explicit operator approval. `--no-verify` for pre-commit hooks requires explicit operator approval (per-invocation, not session-wide).
 6. **Clinical-path edits require operator approval.** See ownership matrix above.
 7. **Never skip `pnpm install` after pulling.** Workspace package links break silently otherwise.
+8. **This fork's code IS the Pantheon platform shell.** Runtime loads code from here, not from `vendor/lobehub-upstream/`. `vendor/lobehub-upstream/` in the home repo is the PRISTINE diff base used only to detect upstream changes — it is never loaded at runtime.
+9. **Catalog every divergence from upstream.** Every file modified in this repo that differs from `vendor/lobehub-upstream/` MUST have a catalog entry at `/opt/obsidian-pantheon/overlay/lobehub/README.md`. Before committing, check the catalog covers your file(s) OR add a new entry to the appropriate group. An optional pre-commit hook at `.githooks/pre-commit` warns on missing coverage.
+10. **Manifest is source of truth for agent definitions.** LobeHub's agent edit UI writes to Postgres → emits event → Pantheon adapter regenerates the canonical manifest at `control-plane/manifests/agents/<slug>.yaml` (in the home repo). Edits made through the UI are lossless — they round-trip through the manifest. Never treat `fleet/<tier>/<slug>/agent/*` as hand-editable; those are regenerated projections (see home repo's CLAUDE.md §8).
 
 ## Verify commands (run after any change before declaring done)
 
