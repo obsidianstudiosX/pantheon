@@ -30,6 +30,11 @@ export const DEFAULT_SIDEBAR_ITEMS: string[] = [
   'community',
   'resource',
   'memory',
+  'pantheon-kanban',
+  'pantheon-snapshots',
+  'pantheon-topology',
+  'pantheon-np',
+  'pantheon-chart-review',
 ];
 
 /** Items that must stay contiguous in the sidebar list (accordion block). */

@@ -121,8 +121,14 @@ describe('systemStatusSelectors', () => {
         status: { sidebarSectionOrder: ['agent', 'recents'] },
       });
       const items = systemStatusSelectors.sidebarItems(s);
-      // accordion slot in the default list now uses the user's legacy order
-      expect(items).toEqual(['pages', 'agent', 'recents', 'community', 'resource', 'memory']);
+      // accordion slot in the default list now uses the user's legacy order;
+      // non-accordion default items (including pantheon entries) follow.
+      const expected = DEFAULT_SIDEBAR_ITEMS.slice();
+      // swap recents<->agent order (they're contiguous in the accordion slot)
+      const i = expected.indexOf('recents');
+      expected[i] = 'agent';
+      expected[i + 1] = 'recents';
+      expect(items).toEqual(expected);
     });
 
     it('should fall back to default when legacy `sidebarSectionOrder` is the default order', () => {
