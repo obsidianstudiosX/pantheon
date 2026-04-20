@@ -2,11 +2,12 @@ import type { ChildProcess } from 'node:child_process';
 import { spawn } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import path from 'node:path';
 import type { Readable, Writable } from 'node:stream';
 
 import { app as electronApp, BrowserWindow } from 'electron';
 
+import { buildProxyEnv } from '@/modules/networkProxy/envBuilder';
 import { createLogger } from '@/utils/logger';
 
 import { ControllerModule, IpcMethod } from './index';
@@ -30,6 +31,8 @@ const CLI_PRESETS: Record<string, CLIPreset> = {
   'claude-code': {
     baseArgs: [
       '-p',
+      '--input-format',
+      'stream-json',
       '--output-format',
       'stream-json',
       '--verbose',
@@ -37,7 +40,7 @@ const CLI_PRESETS: Record<string, CLIPreset> = {
       '--permission-mode',
       'bypassPermissions',
     ],
-    promptMode: 'positional',
+    promptMode: 'stdin',
     resumeArgs: (sid) => ['--resume', sid],
   },
   // Future presets:
@@ -100,6 +103,14 @@ interface AgentSession {
   agentSessionId?: string;
   agentType: string;
   args: string[];
+  /**
+   * True when *we* initiated the kill (cancelSession / stopSession / before-quit).
+   * The `exit` handler uses this to route signal-induced non-zero exits through
+   * the `complete` broadcast instead of surfacing them as runtime errors —
+   * SIGINT(130) / SIGTERM(143) / SIGKILL(137) from our own kill paths are
+   * intentional, not agent failures.
+   */
+  cancelledByUs?: boolean;
   command: string;
   cwd?: string;
   env?: Record<string, string>;
@@ -134,7 +145,7 @@ export default class HeterogeneousAgentCtr extends ControllerModule {
   // ─── File cache ───
 
   private get fileCacheDir(): string {
-    return join(this.app.appStoragePath, FILE_CACHE_DIR);
+    return path.join(this.app.appStoragePath, FILE_CACHE_DIR);
   }
 
   /**
@@ -157,8 +168,8 @@ export default class HeterogeneousAgentCtr extends ControllerModule {
   ): Promise<{ buffer: Buffer; mimeType: string }> {
     const cacheDir = this.fileCacheDir;
     const cacheKey = this.getImageCacheKey(image.id);
-    const metaPath = join(cacheDir, `${cacheKey}.meta`);
-    const dataPath = join(cacheDir, cacheKey);
+    const metaPath = path.join(cacheDir, `${cacheKey}.meta`);
+    const dataPath = path.join(cacheDir, cacheKey);
 
     // Check cache first
     try {
@@ -191,11 +202,11 @@ export default class HeterogeneousAgentCtr extends ControllerModule {
   }
 
   /**
-   * Build a stream-json user message with text + image content blocks.
+   * Build a stream-json user message with text + optional image content blocks.
    */
   private async buildStreamJsonInput(
     prompt: string,
-    imageList: ImageAttachment[],
+    imageList: ImageAttachment[] = [],
   ): Promise<string> {
     const content: any[] = [{ text: prompt, type: 'text' }];
 
@@ -260,13 +271,13 @@ export default class HeterogeneousAgentCtr extends ControllerModule {
     const preset = CLI_PRESETS[session.agentType];
     if (!preset) throw new Error(`Unknown agent type: ${session.agentType}`);
 
-    const hasImages = params.imageList && params.imageList.length > 0;
+    const useStdin = preset.promptMode === 'stdin';
 
-    // If images are attached, prepare the stream-json input BEFORE spawning
-    // so any download errors are caught early.
+    // Build stream-json payload up-front so any image download errors
+    // surface before the process is spawned.
     let stdinPayload: string | undefined;
-    if (hasImages) {
-      stdinPayload = await this.buildStreamJsonInput(params.prompt, params.imageList!);
+    if (useStdin) {
+      stdinPayload = await this.buildStreamJsonInput(params.prompt, params.imageList ?? []);
     }
 
     return new Promise<void>((resolve, reject) => {
@@ -279,26 +290,36 @@ export default class HeterogeneousAgentCtr extends ControllerModule {
         ...session.args,
       ];
 
-      if (hasImages) {
-        // With files: use stdin stream-json mode
-        cliArgs.push('--input-format', 'stream-json');
-      } else {
-        // Without files: use positional prompt (simple mode)
-        if (preset.promptMode === 'positional') {
-          cliArgs.push(params.prompt);
-        }
+      if (!useStdin && preset.promptMode === 'positional') {
+        // Positional mode: append prompt as a CLI arg (legacy / non-CC presets).
+        cliArgs.push(params.prompt);
       }
 
-      logger.info('Spawning agent:', session.command, cliArgs.join(' '));
+      // Fall back to the user's Desktop so the process never inherits
+      // the Electron parent's cwd (which is `/` when launched from Finder).
+      const cwd = session.cwd || electronApp.getPath('desktop');
+
+      logger.info('Spawning agent:', session.command, cliArgs.join(' '), `(cwd: ${cwd})`);
+
+      // `detached: true` on Unix puts the child in a new process group so we
+      // can SIGINT/SIGKILL the whole tree (claude + any tool subprocesses)
+      // via `process.kill(-pid, sig)` on cancel. Without this, SIGINT to just
+      // the claude binary can leave bash/grep/etc. tool children running and
+      // the CLI hung waiting on them. Windows has different semantics — use
+      // taskkill /T /F there; no detached flag needed.
+      // Forward the user's proxy settings to the CLI. The main-process undici
+      // dispatcher doesn't reach child processes — they need env vars.
+      const proxyEnv = buildProxyEnv(this.app.storeManager.get('networkProxy'));
 
       const proc = spawn(session.command, cliArgs, {
-        cwd: session.cwd,
-        env: { ...process.env, ...session.env },
-        stdio: [hasImages ? 'pipe' : 'ignore', 'pipe', 'pipe'],
+        cwd,
+        detached: process.platform !== 'win32',
+        env: { ...process.env, ...proxyEnv, ...session.env },
+        stdio: [useStdin ? 'pipe' : 'ignore', 'pipe', 'pipe'],
       });
 
-      // If using stdin mode, write the stream-json message and close stdin
-      if (hasImages && stdinPayload && proc.stdin) {
+      // In stdin mode, write the stream-json message and close stdin.
+      if (useStdin && stdinPayload && proc.stdin) {
         const stdin = proc.stdin as Writable;
         stdin.write(stdinPayload + '\n', () => {
           stdin.end();
@@ -354,9 +375,20 @@ export default class HeterogeneousAgentCtr extends ControllerModule {
         reject(err);
       });
 
-      proc.on('exit', (code) => {
-        logger.info('Agent process exited:', { code, sessionId: session.sessionId });
+      proc.on('exit', (code, signal) => {
+        logger.info('Agent process exited:', { code, sessionId: session.sessionId, signal });
         session.process = undefined;
+
+        // If *we* killed it (cancel / stop / before-quit), treat the non-zero
+        // exit as a clean shutdown — surfacing it as an error would make a
+        // user-initiated cancel look like an agent failure, and an Electron
+        // shutdown affecting OTHER running CC sessions would pollute their
+        // topics with a misleading "Agent exited with code 143" message.
+        if (session.cancelledByUs) {
+          this.broadcast('heteroAgentSessionComplete', { sessionId: session.sessionId });
+          resolve();
+          return;
+        }
 
         if (code === 0) {
           this.broadcast('heteroAgentSessionComplete', { sessionId: session.sessionId });
@@ -384,14 +416,59 @@ export default class HeterogeneousAgentCtr extends ControllerModule {
   }
 
   /**
-   * Cancel an ongoing session.
+   * Signal the whole process tree spawned by this session.
+   *
+   * On Unix the child was spawned with `detached: true`, so negating the pid
+   * signals the process group — reaching tool subprocesses (bash, grep, etc.)
+   * that would otherwise orphan after a parent-only kill. Falls back to the
+   * direct signal if the group kill raises (ESRCH when the leader is already
+   * gone). On Windows we shell out to `taskkill /T /F` which walks the tree.
+   */
+  private killProcessTree(proc: ChildProcess, signal: NodeJS.Signals): void {
+    if (!proc.pid || proc.killed) return;
+
+    if (process.platform === 'win32') {
+      try {
+        spawn('taskkill', ['/pid', String(proc.pid), '/T', '/F'], { stdio: 'ignore' });
+      } catch (err) {
+        logger.warn('taskkill failed:', err);
+      }
+      return;
+    }
+
+    try {
+      process.kill(-proc.pid, signal);
+    } catch {
+      try {
+        proc.kill(signal);
+      } catch {
+        // already exited
+      }
+    }
+  }
+
+  /**
+   * Cancel an ongoing session: SIGINT the CC tree, escalate to SIGKILL after
+   * 2s if the CLI hasn't exited (some tool calls swallow SIGINT). The
+   * `exit` handler on the spawned proc broadcasts completion and clears
+   * `session.process`, so the escalation is a no-op when the graceful path
+   * already landed.
    */
   @IpcMethod()
   async cancelSession(params: CancelSessionParams): Promise<void> {
     const session = this.sessions.get(params.sessionId);
-    if (session?.process) {
-      session.process.kill('SIGINT');
-    }
+    if (!session?.process || session.process.killed) return;
+
+    session.cancelledByUs = true;
+    const proc = session.process;
+    this.killProcessTree(proc, 'SIGINT');
+
+    setTimeout(() => {
+      if (session.process === proc && !proc.killed) {
+        logger.warn('Session did not exit after SIGINT, escalating to SIGKILL:', params.sessionId);
+        this.killProcessTree(proc, 'SIGKILL');
+      }
+    }, 2000);
   }
 
   /**
@@ -403,10 +480,12 @@ export default class HeterogeneousAgentCtr extends ControllerModule {
     if (!session) return;
 
     if (session.process && !session.process.killed) {
-      session.process.kill('SIGTERM');
+      session.cancelledByUs = true;
+      const proc = session.process;
+      this.killProcessTree(proc, 'SIGTERM');
       setTimeout(() => {
-        if (session.process && !session.process.killed) {
-          session.process.kill('SIGKILL');
+        if (session.process === proc && !proc.killed) {
+          this.killProcessTree(proc, 'SIGKILL');
         }
       }, 3000);
     }
@@ -426,7 +505,8 @@ export default class HeterogeneousAgentCtr extends ControllerModule {
     electronApp.on('before-quit', () => {
       for (const [, session] of this.sessions) {
         if (session.process && !session.process.killed) {
-          session.process.kill('SIGTERM');
+          session.cancelledByUs = true;
+          this.killProcessTree(session.process, 'SIGTERM');
         }
       }
       this.sessions.clear();

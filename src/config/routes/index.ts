@@ -128,6 +128,8 @@ export const NAVIGATION_ROUTES: NavigationRoute[] = [
     keywords: ['snapshots', 'agent config', 'freeze', 'restore', 'diff', 'pantheon'],
     path: '/pantheon/snapshots',
     pathPrefix: '/pantheon/snapshots',
+  },
+  {
     cmdkKey: 'cmdk.pantheonTopology',
     electronKey: 'navigation.pantheonTopology',
     icon: NetworkIcon,
@@ -144,6 +146,8 @@ export const NAVIGATION_ROUTES: NavigationRoute[] = [
     keywords: ['np', 'nurse', 'submissions', 'portal', 'resources', 'pantheon', 'clinical'],
     path: '/pantheon/np',
     pathPrefix: '/pantheon/np',
+  },
+  {
     cmdkKey: 'cmdk.pantheonChartReview',
     electronKey: 'navigation.pantheonChartReview',
     icon: StethoscopeIcon,

@@ -183,6 +183,188 @@ describe('ClaudeCodeAdapter', () => {
     });
   });
 
+  describe('TodoWrite pluginState synthesis', () => {
+    const driveTodoWrite = (adapter: ClaudeCodeAdapter, input: unknown, toolId = 't1') => {
+      adapter.adapt({ subtype: 'init', type: 'system' });
+      adapter.adapt({
+        message: {
+          id: 'msg_1',
+          content: [{ id: toolId, input, name: 'TodoWrite', type: 'tool_use' }],
+        },
+        type: 'assistant',
+      });
+      const events = adapter.adapt({
+        message: {
+          content: [
+            {
+              content: 'Todos have been modified successfully',
+              tool_use_id: toolId,
+              type: 'tool_result',
+            },
+          ],
+          role: 'user',
+        },
+        type: 'user',
+      });
+      const result = events.find((e) => e.type === 'tool_result');
+      return result!.data.pluginState as
+        | { todos: { items: Array<{ status: string; text: string }>; updatedAt: string } }
+        | undefined;
+    };
+
+    it('maps pending/in_progress/completed to todo/processing/completed', () => {
+      const adapter = new ClaudeCodeAdapter();
+      const pluginState = driveTodoWrite(adapter, {
+        todos: [
+          { activeForm: 'Doing A', content: 'Do A', status: 'in_progress' },
+          { activeForm: 'Doing B', content: 'Do B', status: 'pending' },
+          { activeForm: 'Doing C', content: 'Do C', status: 'completed' },
+        ],
+      });
+
+      expect(pluginState).toBeDefined();
+      expect(pluginState!.todos.items).toEqual([
+        { status: 'processing', text: 'Doing A' },
+        { status: 'todo', text: 'Do B' },
+        { status: 'completed', text: 'Do C' },
+      ]);
+      expect(new Date(pluginState!.todos.updatedAt).toISOString()).toBe(
+        pluginState!.todos.updatedAt,
+      );
+    });
+
+    it('falls back to content when activeForm is missing on in_progress item', () => {
+      const adapter = new ClaudeCodeAdapter();
+      const pluginState = driveTodoWrite(adapter, {
+        todos: [{ activeForm: '', content: 'Do the thing', status: 'in_progress' }],
+      });
+      expect(pluginState!.todos.items[0]).toEqual({
+        status: 'processing',
+        text: 'Do the thing',
+      });
+    });
+
+    it('does not set pluginState for non-TodoWrite tools', () => {
+      const adapter = new ClaudeCodeAdapter();
+      adapter.adapt({ subtype: 'init', type: 'system' });
+      adapter.adapt({
+        message: {
+          id: 'msg_1',
+          content: [{ id: 't1', input: { path: '/a' }, name: 'Read', type: 'tool_use' }],
+        },
+        type: 'assistant',
+      });
+      const events = adapter.adapt({
+        message: {
+          content: [{ content: 'ok', tool_use_id: 't1', type: 'tool_result' }],
+          role: 'user',
+        },
+        type: 'user',
+      });
+      const result = events.find((e) => e.type === 'tool_result');
+      expect(result!.data.pluginState).toBeUndefined();
+    });
+
+    it('does NOT synthesize pluginState when tool_result is marked is_error', () => {
+      // Guard: a failed TodoWrite was never applied on CC's side; persisting
+      // a derived snapshot would let `selectTodosFromMessages` overwrite the
+      // live todo UI with changes that never actually happened.
+      const adapter = new ClaudeCodeAdapter();
+      adapter.adapt({ subtype: 'init', type: 'system' });
+      adapter.adapt({
+        message: {
+          id: 'msg_1',
+          content: [
+            {
+              id: 't1',
+              input: { todos: [{ activeForm: 'A', content: 'a', status: 'pending' }] },
+              name: 'TodoWrite',
+              type: 'tool_use',
+            },
+          ],
+        },
+        type: 'assistant',
+      });
+      const events = adapter.adapt({
+        message: {
+          content: [
+            {
+              content: 'Invalid todos payload',
+              is_error: true,
+              tool_use_id: 't1',
+              type: 'tool_result',
+            },
+          ],
+          role: 'user',
+        },
+        type: 'user',
+      });
+      const result = events.find((e) => e.type === 'tool_result');
+      expect(result!.data.isError).toBe(true);
+      expect(result!.data.pluginState).toBeUndefined();
+
+      // Cache must still be drained — a later TodoWrite on a new id should
+      // synthesize only from its own args, not inherit the failed one.
+      adapter.adapt({
+        message: {
+          id: 'msg_2',
+          content: [
+            {
+              id: 't2',
+              input: { todos: [{ activeForm: 'B', content: 'b', status: 'completed' }] },
+              name: 'TodoWrite',
+              type: 'tool_use',
+            },
+          ],
+        },
+        type: 'assistant',
+      });
+      const next = adapter.adapt({
+        message: {
+          content: [{ content: 'ok', tool_use_id: 't2', type: 'tool_result' }],
+          role: 'user',
+        },
+        type: 'user',
+      });
+      const nextState = next.find((e) => e.type === 'tool_result')!.data.pluginState;
+      expect(nextState.todos.items).toEqual([{ status: 'completed', text: 'b' }]);
+    });
+
+    it('drains the cached input so a repeat tool_use id gets a fresh synthesis', () => {
+      const adapter = new ClaudeCodeAdapter();
+      const first = driveTodoWrite(adapter, {
+        todos: [{ activeForm: 'A', content: 'a', status: 'pending' }],
+      });
+      expect(first!.todos.items).toHaveLength(1);
+
+      // Second TodoWrite on a new tool_use id — should resynthesize from its
+      // own args, not leak from the prior cache.
+      adapter.adapt({
+        message: {
+          id: 'msg_2',
+          content: [
+            {
+              id: 't2',
+              input: { todos: [{ activeForm: 'B', content: 'b', status: 'completed' }] },
+              name: 'TodoWrite',
+              type: 'tool_use',
+            },
+          ],
+        },
+        type: 'assistant',
+      });
+      const events = adapter.adapt({
+        message: {
+          content: [{ content: 'ok', tool_use_id: 't2', type: 'tool_result' }],
+          role: 'user',
+        },
+        type: 'user',
+      });
+      const second = events.find((e) => e.type === 'tool_result')!.data.pluginState;
+      expect(second.todos.items).toEqual([{ status: 'completed', text: 'b' }]);
+    });
+  });
+
   describe('multi-step execution (message.id boundary)', () => {
     it('does NOT emit step boundary for the first assistant after init', () => {
       const adapter = new ClaudeCodeAdapter();
@@ -269,7 +451,12 @@ describe('ClaudeCodeAdapter', () => {
   });
 
   describe('usage and model extraction', () => {
-    it('emits step_complete with turn_metadata when message has model and usage', () => {
+    // Under `--include-partial-messages` (our preset default), CC emits a
+    // stale `message_start.usage` snapshot (e.g. `output_tokens: 8`) that it
+    // echoes verbatim on every content-block `assistant` event. The
+    // authoritative per-turn total only arrives later as `message_delta`.
+    // So turn_metadata emission is wired to `message_delta`, not `assistant`.
+    it('does NOT emit turn_metadata on assistant events (usage there is stale)', () => {
       const adapter = new ClaudeCodeAdapter();
       adapter.adapt({ subtype: 'init', type: 'system' });
 
@@ -278,9 +465,36 @@ describe('ClaudeCodeAdapter', () => {
           id: 'msg_1',
           content: [{ text: 'hello', type: 'text' }],
           model: 'claude-sonnet-4-6',
-          usage: { input_tokens: 100, output_tokens: 50 },
+          usage: { input_tokens: 100, output_tokens: 1 }, // stale placeholder
         },
         type: 'assistant',
+      });
+
+      expect(
+        events.find((e) => e.type === 'step_complete' && e.data?.phase === 'turn_metadata'),
+      ).toBeUndefined();
+    });
+
+    it('emits turn_metadata on message_delta with authoritative usage', () => {
+      const adapter = new ClaudeCodeAdapter();
+      adapter.adapt({ subtype: 'init', type: 'system' });
+
+      // stream_event:message_start primes the current message id + model
+      adapter.adapt({
+        event: {
+          message: { id: 'msg_1', model: 'claude-sonnet-4-6' },
+          type: 'message_start',
+        },
+        type: 'stream_event',
+      });
+
+      // message_delta carries the final per-turn usage
+      const events = adapter.adapt({
+        event: {
+          type: 'message_delta',
+          usage: { input_tokens: 100, output_tokens: 50 },
+        },
+        type: 'stream_event',
       });
 
       const meta = events.find(
@@ -288,19 +502,32 @@ describe('ClaudeCodeAdapter', () => {
       );
       expect(meta).toBeDefined();
       expect(meta!.data.model).toBe('claude-sonnet-4-6');
-      expect(meta!.data.usage.input_tokens).toBe(100);
-      expect(meta!.data.usage.output_tokens).toBe(50);
+      expect(meta!.data.provider).toBe('claude-code');
+      expect(meta!.data.usage).toEqual({
+        inputCacheMissTokens: 100,
+        inputCachedTokens: undefined,
+        inputWriteCacheTokens: undefined,
+        totalInputTokens: 100,
+        totalOutputTokens: 50,
+        totalTokens: 150,
+      });
     });
 
-    it('emits step_complete with cache token usage', () => {
+    it('normalizes cache creation and cache read from message_delta usage', () => {
       const adapter = new ClaudeCodeAdapter();
       adapter.adapt({ subtype: 'init', type: 'system' });
 
+      adapter.adapt({
+        event: {
+          message: { id: 'msg_1', model: 'claude-sonnet-4-6' },
+          type: 'message_start',
+        },
+        type: 'stream_event',
+      });
+
       const events = adapter.adapt({
-        message: {
-          id: 'msg_1',
-          content: [{ text: 'hi', type: 'text' }],
-          model: 'claude-sonnet-4-6',
+        event: {
+          type: 'message_delta',
           usage: {
             cache_creation_input_tokens: 200,
             cache_read_input_tokens: 300,
@@ -308,14 +535,54 @@ describe('ClaudeCodeAdapter', () => {
             output_tokens: 50,
           },
         },
-        type: 'assistant',
+        type: 'stream_event',
       });
 
       const meta = events.find(
         (e) => e.type === 'step_complete' && e.data?.phase === 'turn_metadata',
       );
-      expect(meta!.data.usage.cache_creation_input_tokens).toBe(200);
-      expect(meta!.data.usage.cache_read_input_tokens).toBe(300);
+      expect(meta!.data.usage).toEqual({
+        inputCacheMissTokens: 100,
+        inputCachedTokens: 300,
+        inputWriteCacheTokens: 200,
+        totalInputTokens: 600,
+        totalOutputTokens: 50,
+        totalTokens: 650,
+      });
+    });
+
+    it('uses model from the latest assistant event when message_start lacks one', () => {
+      // Non-partial edge case: no message_start carries model, but assistant
+      // events always do. The adapter should still attach the right model.
+      const adapter = new ClaudeCodeAdapter();
+      adapter.adapt({ subtype: 'init', type: 'system' });
+
+      adapter.adapt({
+        event: { message: { id: 'msg_1' }, type: 'message_start' },
+        type: 'stream_event',
+      });
+      adapter.adapt({
+        message: {
+          id: 'msg_1',
+          content: [{ text: 'hi', type: 'text' }],
+          model: 'claude-opus-4-7',
+          usage: { input_tokens: 1, output_tokens: 1 },
+        },
+        type: 'assistant',
+      });
+
+      const events = adapter.adapt({
+        event: {
+          type: 'message_delta',
+          usage: { input_tokens: 10, output_tokens: 100 },
+        },
+        type: 'stream_event',
+      });
+
+      const meta = events.find(
+        (e) => e.type === 'step_complete' && e.data?.phase === 'turn_metadata',
+      );
+      expect(meta!.data.model).toBe('claude-opus-4-7');
     });
   });
 
@@ -429,6 +696,132 @@ describe('ClaudeCodeAdapter', () => {
 
       const toolStarts = events.filter((e) => e.type === 'tool_start');
       expect(toolStarts).toHaveLength(2);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────
+  // Cumulative tools_calling (orphan tool regression)
+  //
+  // CC streams each tool_use content block in its OWN assistant event, even
+  // when multiple tools belong to the same LLM turn (same message.id). The
+  // in-memory handler dispatch updates assistant.tools via a REPLACING array
+  // merge — so if the adapter emitted only the newest tool on each chunk,
+  // earlier tools would vanish from the in-memory assistant.tools[] between
+  // tool_result refreshes and render as orphans. Adapter must emit the full
+  // cumulative list per message.id so the replacing merge preserves history.
+  // ──────────────────────────────────────────────────────────────
+
+  describe('cumulative tools_calling per message.id', () => {
+    it('includes prior tools in tools_calling when a new tool_use arrives on same message.id', () => {
+      const adapter = new ClaudeCodeAdapter();
+      adapter.adapt({ subtype: 'init', type: 'system' });
+
+      // First tool_use block of msg_1
+      const e1 = adapter.adapt({
+        message: {
+          id: 'msg_1',
+          content: [{ id: 't1', input: { path: '/a' }, name: 'Read', type: 'tool_use' }],
+        },
+        type: 'assistant',
+      });
+      const chunk1 = e1.find(
+        (e) => e.type === 'stream_chunk' && e.data.chunkType === 'tools_calling',
+      );
+      expect(chunk1!.data.toolsCalling.map((t: any) => t.id)).toEqual(['t1']);
+
+      // Second tool_use block on the SAME message.id — must carry both t1 + t2
+      const e2 = adapter.adapt({
+        message: {
+          id: 'msg_1',
+          content: [{ id: 't2', input: { cmd: 'ls' }, name: 'Bash', type: 'tool_use' }],
+        },
+        type: 'assistant',
+      });
+      const chunk2 = e2.find(
+        (e) => e.type === 'stream_chunk' && e.data.chunkType === 'tools_calling',
+      );
+      expect(chunk2!.data.toolsCalling.map((t: any) => t.id)).toEqual(['t1', 't2']);
+    });
+
+    it('emits tool_start only for newly-seen tools, not for the cumulative prior ones', () => {
+      const adapter = new ClaudeCodeAdapter();
+      adapter.adapt({ subtype: 'init', type: 'system' });
+
+      adapter.adapt({
+        message: {
+          id: 'msg_1',
+          content: [{ id: 't1', input: {}, name: 'Read', type: 'tool_use' }],
+        },
+        type: 'assistant',
+      });
+
+      const e2 = adapter.adapt({
+        message: {
+          id: 'msg_1',
+          content: [{ id: 't2', input: {}, name: 'Bash', type: 'tool_use' }],
+        },
+        type: 'assistant',
+      });
+
+      const starts = e2.filter((e) => e.type === 'tool_start');
+      expect(starts).toHaveLength(1);
+      expect(starts[0].data.toolCalling.id).toBe('t2');
+    });
+
+    it('starts a fresh accumulator when message.id advances (new LLM turn)', () => {
+      const adapter = new ClaudeCodeAdapter();
+      adapter.adapt({ subtype: 'init', type: 'system' });
+
+      adapter.adapt({
+        message: {
+          id: 'msg_1',
+          content: [{ id: 't1', input: {}, name: 'Read', type: 'tool_use' }],
+        },
+        type: 'assistant',
+      });
+
+      const events = adapter.adapt({
+        message: {
+          id: 'msg_2',
+          content: [{ id: 't2', input: {}, name: 'Bash', type: 'tool_use' }],
+        },
+        type: 'assistant',
+      });
+
+      const chunk = events.find(
+        (e) => e.type === 'stream_chunk' && e.data.chunkType === 'tools_calling',
+      );
+      // Different message.id — the new assistant's tools[] must NOT contain t1
+      expect(chunk!.data.toolsCalling.map((t: any) => t.id)).toEqual(['t2']);
+    });
+
+    it('dedupes when CC echoes a tool_use block with the same id', () => {
+      const adapter = new ClaudeCodeAdapter();
+      adapter.adapt({ subtype: 'init', type: 'system' });
+
+      adapter.adapt({
+        message: {
+          id: 'msg_1',
+          content: [{ id: 't1', input: {}, name: 'Read', type: 'tool_use' }],
+        },
+        type: 'assistant',
+      });
+
+      // Same tool_use id re-sent — cumulative list must not duplicate it,
+      // and tool_start must not fire again.
+      const e2 = adapter.adapt({
+        message: {
+          id: 'msg_1',
+          content: [{ id: 't1', input: {}, name: 'Read', type: 'tool_use' }],
+        },
+        type: 'assistant',
+      });
+
+      const chunk = e2.find(
+        (e) => e.type === 'stream_chunk' && e.data.chunkType === 'tools_calling',
+      );
+      expect(chunk!.data.toolsCalling.map((t: any) => t.id)).toEqual(['t1']);
+      expect(e2.filter((e) => e.type === 'tool_start')).toHaveLength(0);
     });
   });
 
