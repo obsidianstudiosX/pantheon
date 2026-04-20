@@ -20,6 +20,7 @@ export * from './pantheonChartReview';
 export * from './pantheonKanban';
 export * from './pantheonSnapshots';
 export * from './pantheonNp';
+export * from './pantheonPlatform';
 export * from './rag';
 export * from './ragEvals';
 export * from './rbac';
