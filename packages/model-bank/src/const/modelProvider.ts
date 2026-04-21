@@ -48,6 +48,8 @@ export enum ModelProvider {
   OllamaCloud = 'ollamacloud',
   OpenAI = 'openai',
   OpenRouter = 'openrouter',
+  Pantheon = 'pantheon',
+  PantheonDispatch = 'pantheon-dispatch',
   Perplexity = 'perplexity',
   PPIO = 'ppio',
   Qiniu = 'qiniu',
