@@ -10,7 +10,7 @@ import { isPantheonProvidersEnabled } from './pantheon';
  * (Vesper → Dorothy classify → target agent → Eclipse → Diana).
  *
  * Points at the same gateway as the "Pantheon — Direct" provider
- * (`http://127.0.0.1:18790/v1`); the gateway disambiguates by model id.
+ * (`http://host.docker.internal:18790/v1`); the gateway disambiguates by model id.
  *
  * Feature-flag behaviour matches `pantheon.ts` (enabled in dev, opt-in via
  * `NEXT_PUBLIC_PANTHEON_PROVIDERS=1` in production).
@@ -29,7 +29,7 @@ const PantheonDispatch: ModelProviderCard = {
   name: 'Pantheon — Dispatch',
   settings: {
     proxyUrl: {
-      placeholder: 'http://127.0.0.1:18790/v1',
+      placeholder: 'http://host.docker.internal:18790/v1',
     },
     sdkType: 'openai',
     showModelFetcher: false,

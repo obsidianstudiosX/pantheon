@@ -5,7 +5,7 @@ import type { ModelProviderCard } from '@/types/llm';
  *
  * One OpenAI-compatible provider entry exposing 26 `pantheon-<slug>` models
  * (one per fleet agent). Every model is served by the Pantheon Gateway at
- * `http://127.0.0.1:18790/v1` and routed 1:1 to the target agent. PHI-strict
+ * `http://host.docker.internal:18790/v1` and routed 1:1 to the target agent. PHI-strict
  * agents (Teresse, Loen, Crown) are still wrapped by the clinical pipeline
  * server-side — the "direct" label is a selection UX, not a policy bypass.
  *
@@ -40,7 +40,7 @@ const Pantheon: ModelProviderCard = {
   name: 'Pantheon — Direct',
   settings: {
     proxyUrl: {
-      placeholder: 'http://127.0.0.1:18790/v1',
+      placeholder: 'http://host.docker.internal:18790/v1',
     },
     sdkType: 'openai',
     showModelFetcher: true,
