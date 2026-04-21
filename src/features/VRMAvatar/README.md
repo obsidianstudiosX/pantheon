@@ -1,44 +1,69 @@
 # VRMAvatar
 
-Scaffold for sub-project #5 (VRM Avatars). Renders a per-agent 3D portrait
-in the chat UI, driven by the `vrm` field on the agent manifest.
+Per-agent 3D portrait component for sub-project #5. Driven by the `vrm`
+field on the agent manifest and resolved server-side via
+`/api/avatar/<slug>` (a thin wrapper over `server/resolver.ts`).
 
-**Status: SCAFFOLD.** Only the component shell, the react-query hook, and
-tests are in place. The real `lobe-vidol` integration is deferred until
-(a) the `tier` → `runtime.family` rename lands in the home repo and
-(b) operator approval to add `lobe-vidol` as an npm dependency.
+**Status: scaffold complete + all safe shell-side plan tasks landed.** The
+actual three.js / @pixiv/three-vrm / lobe-vidol integration is gated on
+operator approval of the npm deps; the exact plug-in point is in
+`components/Scene.tsx`.
 
-## What this directory contains
+## Directory layout
 
-| File | Purpose |
-|---|---|
-| `index.tsx` | `<VRMAvatar agentSlug size idle />` — placeholder Card today; will wrap the lobe-vidol Viewer later. |
-| `hooks/useVRMBinding.ts` | react-query hook. Returns a `VRMBinding` (URL + pose + stage + voice) for known slugs; `null` for unknown. Wraps a static mock catalog today; will hit `/api/pantheon/v1/agents/<slug>/vrm` after Task 3 in the plan. |
-| `__tests__/VRMAvatar.test.tsx` | 3 tests: known slug renders, unknown slug falls back, `size` prop applies. |
-| `README.md` | You are here. |
+| File                               | Purpose                                                                                                                                                                                                        |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.tsx`                        | `<VRMAvatar agentSlug size idle variant forcePlaceholder />` + `<VRMAvatarChip>` — the public surface. Wraps `<Scene>` behind `React.lazy`, IntersectionObserver, reduced-motion, and the 2-concurrent cap.    |
+| `types.ts`                         | `VRMBinding`, `VRMBindingRaw`, `VRMResolveResponse`.                                                                                                                                                           |
+| `normalise.ts`                     | `normaliseVrmBinding(raw)` collapses the three wire shapes (string / null / object) to a single camelCase `VRMBinding`.                                                                                        |
+| `stages.ts`                        | `STAGE_REGISTRY` of Matrix-room-alias → background URL. `resolveStageUrl(aliasOrUrl)` handles the manifest-override case.                                                                                      |
+| `concurrency.ts`                   | Process-wide 2-slot cap for animated scenes (design §6). `useVRMSlot(id, wanted)`.                                                                                                                             |
+| `components/Scene.tsx`             | Lazy-loaded mount point. **The only file that will import `three` + `@pixiv/three-vrm`.** Today renders a static placeholder visual + stage background; the three-vrm wiring plugs in at `mountThreeVrmScene`. |
+| `hooks/useVRMBinding.ts`           | react-query hook. Hits `/api/pantheon/v1/agents/<slug>/vrm`; soft-falls-back to a mock catalog when the control plane is unreachable.                                                                          |
+| `hooks/useInViewport.ts`           | IntersectionObserver wrapper with 256 px rootMargin.                                                                                                                                                           |
+| `hooks/usePrefersReducedMotion.ts` | MediaQueryList wrapper; `true` forces a static (non-animated) scene.                                                                                                                                           |
+| `server/resolver.ts`               | Shared server-side resolver used by the API route. Handles static-mode, manifest fetch, and MinIO signing.                                                                                                     |
+| `__tests__/*.test.{ts,tsx}`        | 32 tests across normaliser, stages, resolver, concurrency, hooks, component.                                                                                                                                   |
 
-## TODOs (do not remove until closed)
+## Environment flags
 
-- [ ] **Replace the Card placeholder in `index.tsx`** with lobe-vidol's Viewer, mounted in a lazily-imported `components/Scene.tsx`. Wrap with `IntersectionObserver` so the 5–20 MB model only loads when visible (spec §6).
-- [ ] **Swap the mock hook for a real resolver fetch** to `/api/pantheon/v1/agents/<slug>/vrm` (plan Task 3).
-- [ ] **Wire `@lobehub/tts`** using `binding.voiceTts` — bind the mouth-lip-sync callback off TTS streaming.
-- [ ] **Stage backgrounds.** `STAGE_REGISTRY` in `stages.ts` (to be created) maps Matrix room aliases → webp URL; rendered behind the avatar.
-- [ ] **Feature flag.** Gate real rendering behind `NEXT_PUBLIC_VRM_AVATARS=1` until the full pipeline ships.
+- `NEXT_PUBLIC_VRM_AVATARS=1` — show the chip next to the chat-header topic
+  title. Disabled by default so the fork ships benign.
+- `NEXT_PUBLIC_VRM_RESOLVER=static` — the resolver returns
+  `/branding/vrm/<slug>.vrm` directly (no control-plane, no MinIO). Useful
+  for local dev and integration tests.
+- `PANTHEON_VRM_BUCKET`, `PANTHEON_MINIO_ENDPOINT`,
+  `PANTHEON_MINIO_ACCESS_KEY`, `PANTHEON_MINIO_SECRET_KEY`,
+  `PANTHEON_MINIO_REGION` — MinIO signing parameters.
+- `PANTHEON_CONTROL_PLANE_URL` — default `http://127.0.0.1:18790`.
 
-## Intended injection points (not wired yet)
+## Plug-in points for the real VRM runtime
 
-1. `src/features/Conversation/.../ChatHeader` — large (`size={128}`) avatar next to the active agent's display name.
-2. `src/features/AgentGroupAvatar` — small (`size={32}`) avatar per member when the group is a single Pantheon agent.
-3. Agent-select modal tiles — medium (`size={96}`) preview.
+When `@pixiv/three-vrm` and `three` are approved as deps:
 
-## Ownership
+1. **`components/Scene.tsx`** — replace the body of `mountThreeVrmScene` per
+   the block comment (GLTFLoader + VRMLoaderPlugin + render loop). The
+   outer component shape already supports `idle`, `staticFrame`, `size`,
+   and `binding`.
+2. **`hooks/useVRMBinding.ts`** — no changes required; already hits the
+   real resolver.
+3. **`package.json`** — operator adds the deps and runs `pnpm install`.
 
-- **Tier**: shell (fork). All code here lives under `src/features/VRMAvatar/`.
-- **Dependencies**: react, antd (for the scaffold Card), `@tanstack/react-query`. No lobe-vidol yet.
+Nothing else needs to change once the deps land.
+
+## Consumer notes
+
+- `<VRMAvatar agentSlug size={96}>` — default for ChatHeader-sized
+  portraits. Auto-degrades off-viewport.
+- `<VRMAvatarChip agentSlug size={40}>` — small form for mentions, chat
+  bubbles, group avatars. Internally renders `<VRMAvatar variant="chip">`.
+- `forcePlaceholder` — agent-select grid should set `true` on off-hover
+  tiles to stay under the concurrency cap.
 
 ## See also
 
 - Design spec: `docs/superpowers/specs/2026-04-22-vrm-avatars-design.md`
-- Implementation plan: `docs/superpowers/plans/2026-04-22-vrm-avatars-plan.md`
-- Agent manifest schema (home repo): `control-plane/manifests/schemas/agent.schema.json`
-  — `vrm` field currently `string | null`; upgrade to the object form is Task 1.
+- Plan: `docs/superpowers/plans/2026-04-22-vrm-avatars-plan.md`
+- Agent manifest schema (home repo, read-only for this fork):
+  `control-plane/manifests/schemas/agent.schema.json` — `vrm` is still
+  `string | null`. Object-form upgrade is plan Task 1 and lives there.

@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import VRMAvatar from '../index';
 
@@ -14,7 +14,24 @@ const buildWrapper = () => {
   );
 };
 
-describe('VRMAvatar (scaffold)', () => {
+describe('VRMAvatar', () => {
+  beforeEach(() => {
+    // Force the resolver fetch to 404 so we fall through to the MOCK_CATALOG
+    // branch in the hook (which seeds rapi-advocate and vesper-command).
+    // An "unknown" slug with 404 yields `null` binding → fallback card.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = typeof input === 'string' ? input : input.toString();
+        if (url.includes('/api/pantheon/v1/agents/does-not-exist/vrm')) {
+          return new Response('null', { status: 404 });
+        }
+        // Force network-error fallback so the hook returns MOCK_CATALOG.
+        throw new Error('test: network unreachable');
+      }),
+    );
+  });
+
   it('renders VRM card for a known agent slug', async () => {
     const Wrapper = buildWrapper();
     render(
@@ -26,13 +43,11 @@ describe('VRMAvatar (scaffold)', () => {
     await waitFor(() => {
       expect(screen.getByTestId('vrm-avatar-rapi-advocate')).toBeTruthy();
     });
-    // The card title includes the slug.
     expect(screen.getByText('VRM: rapi-advocate')).toBeTruthy();
-    // The mock URL is rendered as a code snippet.
     expect(screen.getByText('/branding/vrm/rapi-advocate.vrm')).toBeTruthy();
   });
 
-  it('renders fallback for an unknown agent slug', async () => {
+  it('renders fallback for an unknown agent slug (404)', async () => {
     const Wrapper = buildWrapper();
     render(
       <Wrapper>
@@ -57,9 +72,25 @@ describe('VRMAvatar (scaffold)', () => {
     await waitFor(() => {
       expect(screen.getByTestId('vrm-avatar-vesper-command')).toBeTruthy();
     });
-    // Width/height on the root Card element should reflect the size prop.
-    const card = container.querySelector('[data-testid="vrm-avatar-vesper-command"]') as HTMLElement;
+    const card = container.querySelector(
+      '[data-testid="vrm-avatar-vesper-command"]',
+    ) as HTMLElement;
     expect(card.style.width).toBe('160px');
     expect(card.style.height).toBe('160px');
+  });
+
+  it('renders placeholder (not scene) when forcePlaceholder=true even for known slug', async () => {
+    const Wrapper = buildWrapper();
+    render(
+      <Wrapper>
+        <VRMAvatar forcePlaceholder agentSlug="rapi-advocate" />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('vrm-avatar-rapi-advocate')).toBeTruthy();
+    });
+    // Scene mount should not appear when placeholder is forced.
+    expect(screen.queryByTestId('vrm-avatar-scene-rapi-advocate')).toBeNull();
   });
 });
