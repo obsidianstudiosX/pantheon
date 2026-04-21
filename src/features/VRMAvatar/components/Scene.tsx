@@ -26,6 +26,9 @@
 
 import type { CSSProperties } from 'react';
 import { memo, useEffect, useRef, useState } from 'react';
+// Type-only import: gives us `Object3D` without pulling three into the
+// initial chunk (erased at build time).
+import type { Object3D } from 'three';
 
 import { resolveStageUrl } from '../stages';
 import type { VRMBinding } from '../types';
@@ -115,7 +118,7 @@ async function mountThreeVrmScene(
   // mid-flight if the caller unmounts before the VRM arrives.
   let rafHandle: number | null = null;
   let disposed = false;
-  let vrmRoot: { scene: THREE.Object3D } | null = null;
+  let vrmRoot: { scene: Object3D } | null = null;
   const loadAbort: AbortController | null =
     typeof AbortController === 'function' ? new AbortController() : null;
 
@@ -143,11 +146,11 @@ async function mountThreeVrmScene(
     // Fetch with an AbortController so an unmount during load doesn't leak a
     // giant VRM parse into an orphan Scene. Falls through to the non-aborting
     // legacy `.load` signature if AbortController is unavailable.
-    const gltf = await new Promise<{ userData: { vrm: { scene: THREE.Object3D } } }>(
+    const gltf = await new Promise<{ userData: { vrm: { scene: Object3D } } }>(
       (resolve, reject) => {
         loader.load(
           binding.url,
-          (g) => resolve(g as unknown as { userData: { vrm: { scene: THREE.Object3D } } }),
+          (g) => resolve(g as unknown as { userData: { vrm: { scene: Object3D } } }),
           undefined,
           (err) => reject(err instanceof Error ? err : new Error(String(err))),
         );
