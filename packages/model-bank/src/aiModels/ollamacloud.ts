@@ -83,10 +83,10 @@ const ollamaCloudModels: AIChatModelCard[] = [
     },
     contextWindowTokens: 262_144,
     description:
-      'Kimi K2.5 is an open-source, native multimodal agentic model that seamlessly integrates vision and language understanding with advanced agentic capabilities, instant and thinking modes, as well as conversational and agentic paradigms.',
-    displayName: 'Kimi K2.5',
+      'Kimi K2.6 is an open-source, native multimodal agentic model that seamlessly integrates vision and language understanding with advanced agentic capabilities, instant and thinking modes, as well as conversational and agentic paradigms.',
+    displayName: 'Kimi K2.6',
     enabled: true,
-    id: 'kimi-k2.5',
+    id: 'kimi-k2.6',
     type: 'chat',
   },
   {
