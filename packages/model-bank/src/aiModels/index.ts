@@ -50,6 +50,8 @@ import { default as ollama } from './ollama';
 import { default as ollamacloud } from './ollamacloud';
 import { default as openai } from './openai';
 import { default as openrouter } from './openrouter';
+import { default as pantheon } from './pantheon';
+import { default as pantheondispatch } from './pantheon-dispatch';
 import { default as perplexity } from './perplexity';
 import { default as ppio } from './ppio';
 import { default as qiniu } from './qiniu';
@@ -150,6 +152,8 @@ export const LOBE_DEFAULT_MODEL_LIST = buildDefaultModelList({
   ollamacloud,
   openai,
   openrouter,
+  pantheon,
+  'pantheon-dispatch': pantheondispatch,
   perplexity,
   ppio,
   qiniu,
@@ -231,6 +235,8 @@ export { default as ollama } from './ollama';
 export { default as ollamacloud } from './ollamacloud';
 export { gptImage1ParamsSchema, default as openai, openaiChatModels } from './openai';
 export { default as openrouter } from './openrouter';
+export { default as pantheon } from './pantheon';
+export { default as pantheondispatch } from './pantheon-dispatch';
 export { default as perplexity } from './perplexity';
 export { default as ppio } from './ppio';
 export { default as qiniu } from './qiniu';

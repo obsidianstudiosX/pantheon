@@ -55,6 +55,8 @@
     "./ollamacloud": "./src/aiModels/ollamacloud.ts",
     "./openai": "./src/aiModels/openai.ts",
     "./openrouter": "./src/aiModels/openrouter.ts",
+    "./pantheon": "./src/aiModels/pantheon.ts",
+    "./pantheon-dispatch": "./src/aiModels/pantheon-dispatch.ts",
     "./perplexity": "./src/aiModels/perplexity.ts",
     "./ppio": "./src/aiModels/ppio.ts",
     "./qiniu": "./src/aiModels/qiniu.ts",

@@ -51,6 +51,8 @@ import OllamaProvider from './ollama';
 import OllamaCloudProvider from './ollamacloud';
 import OpenAIProvider from './openai';
 import OpenRouterProvider from './openrouter';
+import PantheonProvider from './pantheon';
+import PantheonDispatchProvider from './pantheon-dispatch';
 import PerplexityProvider from './perplexity';
 import PPIOProvider from './ppio';
 import QiniuProvider from './qiniu';
@@ -140,6 +142,8 @@ export const LOBE_DEFAULT_MODEL_LIST: ChatModelCard[] = [
 
 export const DEFAULT_MODEL_PROVIDER_LIST = [
   ...(ENABLE_BUSINESS_FEATURES ? [LobeHubProvider] : []),
+  PantheonProvider,
+  PantheonDispatchProvider,
   AnthropicProvider,
   GoogleProvider,
   GLMCodingPlanProvider,
@@ -280,6 +284,8 @@ export { default as OllamaProviderCard } from './ollama';
 export { default as OllamaCloudProviderCard } from './ollamacloud';
 export { default as OpenAIProviderCard } from './openai';
 export { default as OpenRouterProviderCard } from './openrouter';
+export { default as PantheonProviderCard } from './pantheon';
+export { default as PantheonDispatchProviderCard } from './pantheon-dispatch';
 export { default as PerplexityProviderCard } from './perplexity';
 export { default as PPIOProviderCard } from './ppio';
 export { default as QiniuProviderCard } from './qiniu';
