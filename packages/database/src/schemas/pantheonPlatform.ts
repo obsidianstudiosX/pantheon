@@ -10,14 +10,13 @@ import {
   pgTable,
   serial,
   text,
-  timestamp,
   uniqueIndex,
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
 
 import { idGenerator } from '../utils/idGenerator';
-import { timestamps, timestamptz, varchar255 } from './_helpers';
+import { timestamptz, varchar255 } from './_helpers';
 import { agents } from './agent';
 import { knowledgeBases } from './file';
 import { users } from './user';
@@ -42,7 +41,7 @@ export const pantheonAgentExt = pgTable(
       .references(() => agents.id, { onDelete: 'cascade' })
       .notNull(),
 
-    runtimeTier: text('runtime_tier').notNull().default('pantheon'),
+    runtimeFamily: text('runtime_family').notNull().default('pantheon'),
     runtimeImplementation: text('runtime_implementation').notNull().default('pantheon-py'),
     runtimeImplementationVersion: varchar('runtime_implementation_version', { length: 32 }),
     fleetPath: text('fleet_path'),
@@ -93,7 +92,7 @@ export const pantheonAgentExt = pgTable(
     updatedAt: timestamptz('updated_at').notNull().defaultNow(),
   },
   (t) => [
-    index('pantheon_agent_ext_runtime_tier_idx').on(t.runtimeTier),
+    index('pantheon_agent_ext_runtime_family_idx').on(t.runtimeFamily),
     index('pantheon_agent_ext_phi_guard_mode_idx').on(t.phiGuardMode),
     index('pantheon_agent_ext_status_idx').on(t.status),
     index('pantheon_agent_ext_canon_source_idx').on(t.canonSource),
